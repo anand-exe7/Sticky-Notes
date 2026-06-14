@@ -5,7 +5,6 @@
 
 html {
   box-sizing: border-box;
-  background-color: #fbf8f1;
   padding: 0;
   min-height: 100vh;
   -ms-overflow-style: none;
@@ -32,8 +31,8 @@ body {
   scrollbar-width: none;  
   
   
-  background-color: #fbf8f1;
-  background-image: radial-gradient(#e6e0d3 1px, transparent 1px);
+  background-color: #ebe8e1;
+  background-image: radial-gradient(#bf891d 1px, transparent 1px);
   background-size: 24px 24px;
   background-position: center;
   color: #1b1b24;

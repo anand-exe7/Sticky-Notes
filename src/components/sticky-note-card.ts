@@ -1,143 +1,120 @@
-import { LitElement, html, css } from 'lit';
-import { customElement, property, state } from 'lit/decorators.js';
+import { stickyNoteCardStyles } from '../styles/sticky-note-card.styles.js';
+import { LitElement, html } from 'lit';
+import { customElement, property } from "lit/decorators.js";
 import {
-  APP_EVENTS,
-  type NoteDeletePayload,
-  type NotePinPayload,
-} from '../events/app-events';
-import type { StickyNote } from '../types/note.types';
-import './sticky-note-form';
+  NOTE_COLOR_MAP,
+  type StickyNote,
+} from "../models/sticky-note.js";
+import { formatDate } from "../utils/format-date.js";
 
-@customElement('sticky-note-card')
+@customElement("sticky-note-card")
 export class StickyNoteCard extends LitElement {
-  static styles = css`
-    .card {
-      border-radius: 0.5rem;
-      padding: 1rem;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      min-height: 140px;
-    }
-    .color-yellow { background: #fef9c3; }
-    .color-blue   { background: #dbeafe; }
-    .color-green  { background: #dcfce7; }
-    .color-pink   { background: #fce7f3; }
-    .color-orange { background: #ffedd5; }
+  @property({ attribute: false }) note!: StickyNote;
 
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-    }
-    h3 {
-      margin: 0;
-      font-size: 1rem;
-      word-break: break-word;
-    }
-    p {
-      margin: 0;
-      font-size: 0.875rem;
-      white-space: pre-wrap;
-      word-break: break-word;
-      flex: 1;
-    }
-    .card-footer {
-      display: flex;
-      gap: 0.5rem;
-      justify-content: flex-end;
-    }
-    button {
-      background: rgba(255, 255, 255, 0.6);
-      border: none;
-      border-radius: 0.25rem;
-      padding: 0.25rem 0.5rem;
-      cursor: pointer;
-      font-size: 0.85rem;
-    }
-    button:focus-visible {
-      outline: 2px solid #3b82f6;
-      outline-offset: 1px;
-    }
-    .pin-btn {
-      background: transparent;
-      font-size: 1.1rem;
-    }
-  `;
+  static styles = stickyNoteCardStyles;
 
-  @property({ type: Object })
-  note!: StickyNote;
-
-  @state() private editing = false;
-
-  private handleDelete() {
-    const confirmed = confirm(
-      `Delete "${this.note.title}"? This cannot be undone.`
-    );
-    if (confirmed) {
-      this.dispatchEvent(
-        new CustomEvent<NoteDeletePayload>(APP_EVENTS.NOTE_DELETE, {
-          detail: { id: this.note.id },
-          bubbles: true,
-          composed: true,
-        })
-      );
-    }
+  private get rotation(): number {
+    const id = this.note.id;
+    const sum = [...id].reduce((acc, c) => acc + c.charCodeAt(0), 0);
+    return (sum % 7) - 3;
   }
 
-  private handlePinToggle() {
+  private emit(event: string, detail?: unknown) {
     this.dispatchEvent(
-      new CustomEvent<NotePinPayload>(APP_EVENTS.NOTE_PIN, {
-        detail: { id: this.note.id },
+      new CustomEvent(event, {
+        detail,
         bubbles: true,
         composed: true,
-      })
+      }),
     );
   }
 
-  private toggleEdit() {
-    this.editing = !this.editing;
+  private handleEdit(e: Event) {
+    e.stopPropagation();
+    this.emit("note-edit", { id: this.note.id });
   }
 
-  private handleFormUpdate() {
-    this.editing = false;
+  private handleDelete(e: Event) {
+    e.stopPropagation();
+    this.emit("note-delete", { id: this.note.id });
+  }
+
+  private handlePin(e: Event) {
+    e.stopPropagation();
+    this.emit("note-pin", { id: this.note.id });
+  }
+
+  private handleKeyDown(e: KeyboardEvent) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      this.handleEdit(e);
+    } else if (e.key === "Delete" || e.key === "Backspace") {
+      e.preventDefault();
+      this.handleDelete(e);
+    } else if (e.key.toLowerCase() === "p" && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      this.handlePin(e);
+    }
   }
 
   render() {
-    if (this.editing) {
-      return html`
-        <div class="card color-${this.note.color}">
-          <sticky-note-form
-            .note=${this.note}
-            @note:update=${this.handleFormUpdate}
-          ></sticky-note-form>
-          <button @click=${this.toggleEdit}>Cancel</button>
-        </div>
-      `;
-    }
+    const bg = NOTE_COLOR_MAP[this.note.color];
+    const rot = this.rotation;
 
     return html`
-      <div class="card color-${this.note.color}">
-        <div class="card-header">
-          <h3>${this.note.title}</h3>
-          <button
-            class="pin-btn"
-            @click=${this.handlePinToggle}
-            aria-label=${this.note.pinned ? 'Unpin note' : 'Pin note'}
-            aria-pressed=${this.note.pinned}
+      <div
+        class="card ${this.note.pinned ? 'folded' : ''}"
+        style="--bg: ${bg}; --rot: ${rot}deg;"
+        tabindex="0"
+        role="article"
+        aria-label="${this.note.title}"
+        @keydown=${this.handleKeyDown}
+      >
+        ${this.note.pinned
+          ? html`<div class="real-pin"></div>`
+          : html`<div class="tape"></div>`
+        }
+
+        <h3 class="title">${this.note.title}</h3>
+        <p class="content">${this.note.content}</p>
+
+        <div class="footer">
+          <span class="date">${formatDate(this.note.updatedAt)}</span>
+          <div
+            class="actions"
+            role="group"
+            aria-label="Note actions"
           >
-            ${this.note.pinned ? '📌' : '📍'}
-          </button>
-        </div>
-        <p>${this.note.content}</p>
-        <div class="card-footer">
-          <button @click=${this.toggleEdit} aria-label="Edit note">
-            Edit
-          </button>
-          <button @click=${this.handleDelete} aria-label="Delete note">
-            Delete
-          </button>
+            <button
+              class="action-btn pin"
+              @click=${this.handlePin}
+              aria-label="${this.note.pinned ? "Unpin note" : "Pin note"}"
+              title="${this.note.pinned ? "Unpin" : "Pin"}"
+            >
+              <span
+                style="font-variation-settings: 'FILL' ${this.note.pinned
+                  ? 1
+                  : 0}"
+                >push_pin</span
+              >
+            </button>
+            <button
+              class="action-btn edit"
+              @click=${this.handleEdit}
+              aria-label="Edit note"
+              title="Edit"
+            >
+              <span>edit</span>
+            </button>
+            <button
+              class="action-btn delete"
+              @click=${this.handleDelete}
+              aria-label="Delete note"
+              title="Delete"
+            >
+              <span>delete</span>
+            </button>
+          </div>
         </div>
       </div>
     `;
@@ -146,6 +123,6 @@ export class StickyNoteCard extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'sticky-note-card': StickyNoteCard;
+    "sticky-note-card": StickyNoteCard;
   }
 }
