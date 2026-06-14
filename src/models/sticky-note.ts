@@ -12,19 +12,19 @@ export interface StickyNote {
 }
 
 export const NOTE_COLORS = [
-  { value: 'yellow', label: 'Yellow', hex: '#fef08a' },
-  { value: 'green', label: 'Green', hex: '#bbf7d0' },
-  { value: 'blue', label: 'Blue', hex: '#bfdbfe' },
-  { value: 'pink', label: 'Pink', hex: '#fbcfe8' },
-  { value: 'orange', label: 'Orange', hex: '#fed7aa' },
+  { value: 'yellow', label: 'Yellow', hex: '#fced90' },
+  { value: 'green', label: 'Green', hex: '#b7dec0' },
+  { value: 'blue', label: 'Blue', hex: '#adcce8' },
+  { value: 'pink', label: 'Pink', hex: '#f5b5c8' },
+  { value: 'orange', label: 'Orange', hex: '#f2bc8a' },
 ] as const;
 
 export const NOTE_COLOR_MAP: Record<string, string> = {
-  yellow: '#fef08a',
-  green: '#bbf7d0',
-  blue: '#bfdbfe',
-  pink: '#fbcfe8',
-  orange: '#fed7aa',
+  yellow: '#fced90',
+  green: '#b7dec0',
+  blue: '#adcce8',
+  pink: '#f5b5c8',
+  orange: '#f2bc8a',
 };
 
 export const PIN_COLORS = [

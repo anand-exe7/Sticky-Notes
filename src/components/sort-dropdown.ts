@@ -1,56 +1,55 @@
-import { LitElement, html, css } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
-import { APP_EVENTS, type SortChangePayload } from '../events/app-events';
-import type { SortOption } from '../types/note.types';
+import { sortDropdownStyles } from '../styles/sort-dropdown.styles.js';
+import { LitElement, html } from 'lit';
+import { customElement, property, state } from 'lit/decorators.js';
+import { SORT_OPTIONS, type SortOption } from '../models/sticky-note.js';
 
 @customElement('sort-dropdown')
 export class SortDropdown extends LitElement {
-  static styles = css`
-    :host {
-      display: block;
-    }
-    select {
-      padding: 0.5rem 0.75rem;
-      border: 1px solid #ccc;
-      border-radius: 0.375rem;
-      font-size: 1rem;
-      background: white;
-    }
-    select:focus-visible {
-      outline: 2px solid #3b82f6;
-      outline-offset: 1px;
-    }
-    .sr-only {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-    }
-  `;
+  @property({ type: String }) value: SortOption = 'createdAt';
+  @state() private open = false;
 
-  @property({ type: String })
-  value: SortOption = 'createdAt';
+  static styles = sortDropdownStyles;
 
-  private handleChange(e: Event) {
-    const sort = (e.target as HTMLSelectElement).value as SortOption;
-    this.dispatchEvent(
-      new CustomEvent<SortChangePayload>(APP_EVENTS.SORT_CHANGE, {
-        detail: { sort },
-        bubbles: true,
-        composed: true,
-      })
-    );
+  private toggle() {
+    this.open = !this.open;
+  }
+
+  private select(value: SortOption) {
+    this.value = value;
+    this.open = false;
+    this.dispatchEvent(new CustomEvent('sort-changed', {
+      detail: { sort: value },
+      bubbles: true,
+      composed: true,
+    }));
+  }
+
+  private handleBlur() {
+    setTimeout(() => { this.open = false; }, 150);
+  }
+
+  get currentLabel() {
+    return SORT_OPTIONS.find(o => o.value === this.value)?.label ?? 'Sort';
   }
 
   render() {
     return html`
-      <label for="sort-select" class="sr-only">Sort notes by</label>
-      <select id="sort-select" .value=${this.value} @change=${this.handleChange}>
-        <option value="createdAt">Creation Time</option>
-        <option value="updatedAt">Last Updated</option>
-        <option value="title">Title (A-Z)</option>
-      </select>
+      <div @focusout=${this.handleBlur}>
+        <button class="trigger" @click=${this.toggle} aria-haspopup="listbox" aria-expanded=${this.open} aria-label="Sort notes">
+          <span class="icon">sort</span> ${this.currentLabel}
+          <span class="chevron ${this.open ? 'open' : ''}">expand_more</span>
+        </button>
+
+        ${this.open ? html`
+          <div class="menu" role="listbox">
+            ${SORT_OPTIONS.map(opt => html`
+              <button class="menu-item ${this.value === opt.value ? 'selected' : ''}" role="option" aria-selected=${this.value === opt.value} @click=${() => this.select(opt.value)}>
+                <span class="check">check</span> ${opt.label}
+              </button>
+            `)}
+          </div>
+        ` : ''}
+      </div>
     `;
   }
 }
