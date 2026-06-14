@@ -1,5 +1,5 @@
 export type NoteColor = 'yellow' | 'blue' | 'green' | 'pink' | 'orange';
-export type SortOption = 'createdAt' | 'updatedAt' | 'title';
+export type SortOption = 'createdAt' | 'updatedAt' | 'title' | 'custom';
 
 export interface StickyNote {
   id: string;
@@ -36,6 +36,7 @@ export const PIN_COLORS = [
 ];
 
 export const SORT_OPTIONS: { value: SortOption; label: string }[] = [
+  { value: 'custom', label: 'Custom Order' },
   { value: 'createdAt', label: 'Date Created' },
   { value: 'updatedAt', label: 'Date Modified' },
   { value: 'title', label: 'Title (A-Z)' },
