@@ -1,181 +1,401 @@
-import { LitElement, html, css } from 'lit';
+import { stickyNotesAppStyles } from '../styles/sticky-notes-app.styles.js';
+import { LitElement, html } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
-import { NoteService } from '../services/note.service';
-import type { StickyNote, SortOption } from '../types/note.types';
-import {
-  APP_EVENTS,
-  type NoteCreatePayload,
-  type NoteUpdatePayload,
-  type NoteDeletePayload,
-  type NotePinPayload,
-  type SearchQueryPayload,
-  type SortChangePayload,
-} from '../events/app-events';
-import './search-bar';
-import './sort-dropdown';
-import './sticky-note-form';
-import './sticky-note-card';
+import { generateId } from '../utils/id-generator.js';
+import { type StickyNote, type SortOption, type NoteColor } from '../models/sticky-note.js';
+import type { NoteFormData } from './sticky-note-form.js';
+import './sticky-note-card.js';
+import './sticky-note-form.js';
+import './search-bar.js';
+import './sort-dropdown.js';
+
 
 @customElement('sticky-notes-app')
 export class StickyNotesApp extends LitElement {
-  static styles = css`
-    :host {
-      display: block;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 1.5rem;
-      font-family: system-ui, sans-serif;
-    }
-    .toolbar {
-      display: flex;
-      gap: 1rem;
-      align-items: center;
-      margin-bottom: 1.5rem;
-      flex-wrap: wrap;
-    }
-    .toolbar search-bar {
-      flex: 1;
-      min-width: 200px;
-    }
-    .new-note-btn {
-      padding: 0.5rem 1rem;
-      background: #3b82f6;
-      color: white;
-      border: none;
-      border-radius: 0.375rem;
-      cursor: pointer;
-      font-size: 1rem;
-    }
-    .new-note-btn:focus-visible {
-      outline: 2px solid #1d4ed8;
-      outline-offset: 2px;
-    }
-    .create-form-wrapper {
-      margin-bottom: 1.5rem;
-      padding: 1rem;
-      border: 1px solid #e5e7eb;
-      border-radius: 0.5rem;
-      background: #f9fafb;
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: 1rem;
-    }
-    .empty-state {
-      text-align: center;
-      padding: 3rem 1rem;
-      color: #6b7280;
-    }
-  `;
+  private notes: StickyNote[] = [];
 
-  private noteService = new NoteService();
-
-  @state() private notes: StickyNote[] = [];
   @state() private searchQuery = '';
   @state() private sortBy: SortOption = 'createdAt';
-  @state() private showCreateForm = false;
+  @state() private showForm = false;
+  @state() private editingNote: StickyNote | null = null;
+  @state() private _renderTick = 0;
+
+  @state() private deletedNote: StickyNote | null = null;
+  @state() private noteToDelete: StickyNote | null = null;
+  @state() private theme: 'light' | 'dark' = 'light';
+  @state() private sidebarOpen = false;
+  private undoTimeout?: number;
+  private draggedNoteId: string | null = null;
 
   connectedCallback() {
     super.connectedCallback();
-
-    this.notes = this.noteService.getAll();
-
-    this.addEventListener(APP_EVENTS.NOTE_CREATE, this.onNoteCreate as EventListener);
-    this.addEventListener(APP_EVENTS.NOTE_UPDATE, this.onNoteUpdate as EventListener);
-    this.addEventListener(APP_EVENTS.NOTE_DELETE, this.onNoteDelete as EventListener);
-    this.addEventListener(APP_EVENTS.NOTE_PIN, this.onNotePin as EventListener);
-    this.addEventListener(APP_EVENTS.SEARCH_QUERY, this.onSearchQuery as EventListener);
-    this.addEventListener(APP_EVENTS.SORT_CHANGE, this.onSortChange as EventListener);
+    window.addEventListener('keydown', this.handleGlobalKeyDown);
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
-
-    this.removeEventListener(APP_EVENTS.NOTE_CREATE, this.onNoteCreate as EventListener);
-    this.removeEventListener(APP_EVENTS.NOTE_UPDATE, this.onNoteUpdate as EventListener);
-    this.removeEventListener(APP_EVENTS.NOTE_DELETE, this.onNoteDelete as EventListener);
-    this.removeEventListener(APP_EVENTS.NOTE_PIN, this.onNotePin as EventListener);
-    this.removeEventListener(APP_EVENTS.SEARCH_QUERY, this.onSearchQuery as EventListener);
-    this.removeEventListener(APP_EVENTS.SORT_CHANGE, this.onSortChange as EventListener);
+    window.removeEventListener('keydown', this.handleGlobalKeyDown);
   }
 
-  private onNoteCreate = (e: CustomEvent<NoteCreatePayload>) => {
-    this.noteService.create(e.detail.data);
-    this.notes = this.noteService.getAll();
-    this.showCreateForm = false;
+  private handleGlobalKeyDown = (e: KeyboardEvent) => {
+    
+    const target = e.composedPath()[0];
+    if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || (target as HTMLElement).isContentEditable) {
+      return;
+    }
+
+    if (e.key.toLowerCase() === 'n' && e.altKey) {
+      e.preventDefault();
+      this.handleAddNew();
+    } else if (e.key.toLowerCase() === 'z' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      this.undoDelete();
+    } else if (e.key === '/' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      const searchBar = this.shadowRoot?.querySelector('search-bar');
+      const input = searchBar?.shadowRoot?.querySelector('input');
+      input?.focus();
+    } else if (e.key === 'Escape') {
+      if (this.sidebarOpen) this.sidebarOpen = false;
+      if (this.noteToDelete) this.noteToDelete = null;
+      if (this.showForm) this.handleFormCancel();
+    }
   };
 
-  private onNoteUpdate = (e: CustomEvent<NoteUpdatePayload>) => {
-    this.noteService.update(e.detail.id, e.detail.data);
-    this.notes = this.noteService.getAll();
-  };
+  static styles = stickyNotesAppStyles;
 
-  private onNoteDelete = (e: CustomEvent<NoteDeletePayload>) => {
-    this.noteService.delete(e.detail.id);
-    this.notes = this.noteService.getAll();
-  };
+  private get filteredAndSorted(): StickyNote[] {
+    let result = [...this.notes];
 
-  private onNotePin = (e: CustomEvent<NotePinPayload>) => {
-    this.noteService.togglePin(e.detail.id);
-    this.notes = this.noteService.getAll();
-  };
+    if (this.searchQuery.trim()) {
+      const q = this.searchQuery.toLowerCase();
+      result = result.filter(n =>
+        n.title.toLowerCase().includes(q) ||
+        n.content.toLowerCase().includes(q)
+      );
+    }
 
-  private onSearchQuery = (e: CustomEvent<SearchQueryPayload>) => {
-    this.searchQuery = e.detail.query;
-  };
+    if (this.sortBy !== 'custom') {
+      result.sort((a, b) => {
+        if (this.sortBy === 'title') {
+          return a.title.localeCompare(b.title);
+        }
+        if (this.sortBy === 'updatedAt') {
+          return b.updatedAt.getTime() - a.updatedAt.getTime();
+        }
+        return b.createdAt.getTime() - a.createdAt.getTime();
+      });
+    }
 
-  private onSortChange = (e: CustomEvent<SortChangePayload>) => {
-    this.sortBy = e.detail.sort;
-  };
-
-  private toggleCreateForm() {
-    this.showCreateForm = !this.showCreateForm;
+    const pinned   = result.filter(n => n.pinned);
+    const unpinned = result.filter(n => !n.pinned);
+    return [...pinned, ...unpinned];
   }
 
-  private getVisibleNotes(): StickyNote[] {
-    const filtered = this.searchQuery
-      ? this.noteService.search(this.searchQuery)
-      : this.notes;
+  private handleSearch(e: CustomEvent) {
+    this.searchQuery = (e as CustomEvent<{ query: string }>).detail.query;
+  }
 
-    return this.noteService.sort(filtered, this.sortBy);
+  private handleSort(e: CustomEvent) {
+    this.sortBy = (e as CustomEvent<{ sort: SortOption }>).detail.sort;
+  }
+
+  private handleAddNew() {
+    this.editingNote = null;
+    this.showForm = true;
+  }
+
+  private handleNoteEdit(e: CustomEvent) {
+    const id = (e as CustomEvent<{ id: string }>).detail.id;
+    const note = this.notes.find(n => n.id === id);
+    if (note) {
+      this.editingNote = note;
+      this.showForm = true;
+    }
+  }
+
+  private handleNoteDelete(e: CustomEvent) {
+    const id = (e as CustomEvent<{ id: string }>).detail.id;
+    const note = this.notes.find(n => n.id === id);
+    if (note) {
+      this.noteToDelete = note;
+    }
+  }
+
+  private confirmDelete() {
+    if (!this.noteToDelete) return;
+    
+    this.deletedNote = this.noteToDelete;
+    this.notes = this.notes.filter(n => n.id !== this.noteToDelete!.id);
+    this.noteToDelete = null;
+    this._renderTick++;
+    
+    if (this.undoTimeout) window.clearTimeout(this.undoTimeout);
+    this.undoTimeout = window.setTimeout(() => {
+      this.deletedNote = null;
+    }, 5000);
+  }
+
+  private cancelDelete() {
+    this.noteToDelete = null;
+  }
+
+  private undoDelete() {
+    if (this.deletedNote) {
+      this.notes = [this.deletedNote, ...this.notes];
+      this.deletedNote = null;
+      if (this.undoTimeout) window.clearTimeout(this.undoTimeout);
+      this._renderTick++;
+    }
+  }
+
+  private handleDragStart(e: DragEvent, note: StickyNote) {
+    this.draggedNoteId = note.id;
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', note.id);
+    }
+  }
+
+  private handleDragOver(e: DragEvent) {
+    e.preventDefault();
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+  }
+
+  private handleDrop(e: DragEvent, targetNote: StickyNote) {
+    e.preventDefault();
+    if (!this.draggedNoteId || this.draggedNoteId === targetNote.id) return;
+    
+    const draggedNote = this.notes.find(n => n.id === this.draggedNoteId);
+    if (!draggedNote || draggedNote.pinned !== targetNote.pinned) return;
+
+    const draggedIdx = this.notes.findIndex(n => n.id === this.draggedNoteId);
+    const targetIdx = this.notes.findIndex(n => n.id === targetNote.id);
+    
+    if (draggedIdx === -1 || targetIdx === -1) return;
+
+    const newNotes = [...this.notes];
+    const [removed] = newNotes.splice(draggedIdx, 1);
+    newNotes.splice(targetIdx, 0, removed);
+    
+    this.notes = newNotes;
+    this.sortBy = 'custom';
+    this.draggedNoteId = null;
+    this._renderTick++;
+  }
+
+  private toggleTheme() {
+    this.theme = this.theme === 'light' ? 'dark' : 'light';
+    if (this.theme === 'dark') {
+      document.body.classList.add('dark-theme');
+    } else {
+      document.body.classList.remove('dark-theme');
+    }
+  }
+
+  private handleNotePin(e: CustomEvent) {
+    const id = (e as CustomEvent<{ id: string }>).detail.id;
+    this.notes = this.notes.map(n =>
+      n.id === id ? { ...n, pinned: !n.pinned, updatedAt: new Date() } : n
+    );
+    this._renderTick++;
+  }
+
+  private handleFormSubmit(e: CustomEvent) {
+    const data = (e as CustomEvent<NoteFormData>).detail;
+    const now = new Date();
+
+    if (this.editingNote) {
+      this.notes = this.notes.map(n =>
+        n.id === this.editingNote!.id
+          ? { ...n, title: data.title, content: data.content, color: data.color as NoteColor, updatedAt: now }
+          : n
+      );
+    } else {
+      const newNote: StickyNote = {
+        id: generateId(),
+        title: data.title,
+        content: data.content,
+        color: data.color as NoteColor,
+        pinned: false,
+        createdAt: now,
+        updatedAt: now,
+      };
+      this.notes = [newNote, ...this.notes];
+    }
+
+    this._renderTick++;
+    this.showForm = false;
+    this.editingNote = null;
+  }
+
+  private handleFormCancel() {
+    this.showForm = false;
+    this.editingNote = null;
   }
 
   render() {
-    const visibleNotes = this.getVisibleNotes();
+    const notes = this.filteredAndSorted;
 
     return html`
-      <div class="toolbar">
-        <search-bar></search-bar>
-        <sort-dropdown .value=${this.sortBy}></sort-dropdown>
-        <button class="new-note-btn" @click=${this.toggleCreateForm}>
-          ${this.showCreateForm ? 'Cancel' : '+ New Note'}
-        </button>
+      <button class="hamburger-btn" @click=${() => this.sidebarOpen = true} aria-label="Open Menu">
+        <span class="material-symbols-outlined">menu</span>
+      </button>
+
+      <div class="sidebar-backdrop ${this.sidebarOpen ? 'open' : ''}" @click=${() => this.sidebarOpen = false}></div>
+      <aside class="sidebar ${this.sidebarOpen ? 'open' : ''}">
+        <div class="sidebar-header">
+          <h2>Menu</h2>
+          <button @click=${() => this.sidebarOpen = false} aria-label="Close Menu">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <div class="sidebar-content">
+          <div class="sidebar-section">
+            <h3>Recently Deleted</h3>
+            ${this.deletedNote ? html`
+              <div class="deleted-item">
+                <span>${this.deletedNote.title}</span>
+                <button @click=${this.undoDelete}>Restore</button>
+              </div>
+            ` : html`<p class="empty-text">No recently deleted notes</p>`}
+          </div>
+          <div class="sidebar-section">
+            <h3>Board Stats</h3>
+            <div class="stat-row">
+              <span>Total Notes</span>
+              <strong>${this.notes.length}</strong>
+            </div>
+            <div class="stat-row">
+              <span>Pinned Notes</span>
+              <strong>${this.notes.filter(n => n.pinned).length}</strong>
+            </div>
+          </div>
+          <div class="sidebar-section">
+            <h3>Keyboard Shortcuts</h3>
+            <div class="shortcut-row">
+              <span>New Note</span>
+              <kbd>Alt + N</kbd>
+            </div>
+            <div class="shortcut-row">
+              <span>Search</span>
+              <kbd>Ctrl + /</kbd>
+            </div>
+            <div class="shortcut-row">
+              <span>Undo Delete</span>
+              <kbd>Ctrl + Z</kbd>
+            </div>
+            <div class="shortcut-row">
+              <span>Focus Note</span>
+              <kbd>Tab</kbd>
+            </div>
+            <div class="shortcut-row">
+              <span>Edit Card</span>
+              <kbd>Enter</kbd>
+            </div>
+            <div class="shortcut-row">
+              <span>Delete Card</span>
+              <kbd>Del</kbd>
+            </div>
+            <div class="shortcut-row">
+              <span>Pin Card</span>
+              <kbd>Ctrl + P</kbd>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+     
+      <div class="search-container">
+        <search-bar
+          .value=${this.searchQuery}
+          @search-changed=${this.handleSearch}
+        ></search-bar>
       </div>
 
-      ${this.showCreateForm
-        ? html`
-            <div class="create-form-wrapper">
-              <sticky-note-form></sticky-note-form>
-            </div>
-          `
-        : null}
+      <div class="controls">
+        <sort-dropdown
+          .value=${this.sortBy}
+          @sort-changed=${this.handleSort}
+        ></sort-dropdown>
 
-      ${visibleNotes.length === 0
-        ? html`
-            <div class="empty-state">
-              ${this.searchQuery
-                ? html`<p>No notes match "${this.searchQuery}"</p>`
-                : html`<p>No notes yet. Create your first one!</p>`}
+        <button class="theme-btn" @click=${this.toggleTheme} aria-label="Toggle theme">
+          <span>${this.theme === 'dark' ? 'light_mode' : 'dark_mode'}</span>
+        </button>
+
+        <div class="add-btn-wrapper">
+          <button
+            class="add-btn"
+            @click=${this.handleAddNew}
+            aria-label="Add new note"
+          >
+            <div class="add-pin"></div>
+            <span>add</span>
+          </button>
+          <span class="add-tooltip">New Note</span>
+        </div>
+      </div>
+
+     
+      <main
+        class="board"
+        @note-edit=${this.handleNoteEdit}
+        @note-delete=${this.handleNoteDelete}
+        @note-pin=${this.handleNotePin}
+      >
+        ${notes.length === 0 ? html`
+          <div class="empty-state" role="status" aria-live="polite">
+            <div class="empty-card">
+              <div class="empty-pin"></div>
+              <span class="empty-icon">${this.searchQuery ? 'search_off' : 'sticky_note_2'}</span>
+              <p class="empty-title">
+                ${this.searchQuery ? 'No matching notes' : 'Your board is empty'}
+              </p>
+              <p class="empty-sub">
+                ${this.searchQuery ? 'Try a different search term' : 'Click + to pin your first thought'}
+              </p>
             </div>
-          `
-        : html`
-            <div class="grid">
-              ${visibleNotes.map(
-                (note) => html`<sticky-note-card .note=${note}></sticky-note-card>`
-              )}
+          </div>
+        ` : html`
+          <div class="notes-grid">
+            ${notes.map(note => html`
+              <sticky-note-card .note=${note} draggable="true" @dragstart=${(e: DragEvent) => this.handleDragStart(e, note)} @dragover=${(e: DragEvent) => this.handleDragOver(e)} @drop=${(e: DragEvent) => this.handleDrop(e, note)}></sticky-note-card>
+            `)}
+          </div>
+        `}
+      </main>
+
+      
+      ${this.showForm ? html`
+        <sticky-note-form
+          .note=${this.editingNote}
+          @note-submit=${this.handleFormSubmit}
+          @form-cancel=${this.handleFormCancel}
+        ></sticky-note-form>
+      ` : ''}
+
+      
+      ${this.deletedNote ? html`
+        <div class="toast" role="alert">
+          <span>Note deleted.</span>
+          <button @click=${this.undoDelete}>Undo</button>
+        </div>
+      ` : ''}
+
+     
+      ${this.noteToDelete ? html`
+        <div class="modal-backdrop">
+          <div class="confirm-modal" role="dialog" aria-labelledby="confirm-title" style="position: relative;">
+            <div class="modal-tape"></div>
+            <h3 id="confirm-title" class="confirm-title">Delete Note</h3>
+            <p class="confirm-text">Are you sure you want to delete "${this.noteToDelete.title}"?</p>
+            <div class="confirm-actions">
+              <button class="confirm-btn btn-cancel" @click=${this.cancelDelete}>Cancel</button>
+              <button class="confirm-btn btn-delete" @click=${this.confirmDelete}>Delete</button>
             </div>
-          `}
+          </div>
+        </div>
+      ` : ''}
     `;
   }
 }
