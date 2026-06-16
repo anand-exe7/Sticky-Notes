@@ -395,14 +395,14 @@ export const stickyNotesAppStyles = css`
       box-shadow: 0 2px 0 rgba(0,0,0,0.1);
     }
 
-    body.dark-theme .sidebar { background: #121214; }
-    body.dark-theme .sidebar-header h2 { color: #e4e4e7; }
-    body.dark-theme .deleted-item { background: #2b2b2f; }
-    body.dark-theme .deleted-item span,
-    body.dark-theme .stat-row strong { color: #e4e4e7; }
-    body.dark-theme .stat-row,
-    body.dark-theme .shortcut-row,
-    body.dark-theme .sidebar-section h3 { color: #a1a1aa; }
+    :host([theme="dark"]) .sidebar { background: #121214; }
+    :host([theme="dark"]) .sidebar-header h2 { color: #e4e4e7; }
+    :host([theme="dark"]) .deleted-item { background: #2b2b2f; }
+    :host([theme="dark"]) .deleted-item span,
+    :host([theme="dark"]) .stat-row strong { color: #e4e4e7; }
+    :host([theme="dark"]) .stat-row,
+    :host([theme="dark"]) .shortcut-row,
+    :host([theme="dark"]) .sidebar-section h3 { color: #a1a1aa; }
     /* We use a pseudo-element for the mobile blur so we can apply a gradient mask without fading the buttons */
     .top-nav::before {
       content: '';
@@ -455,7 +455,7 @@ export const stickyNotesAppStyles = css`
       font-feature-settings: 'liga';
       font-size: 24px;
     }
-    body.dark-theme .hamburger-btn { background: #2b2b2f; color: #e4e4e7; }
+    :host([theme="dark"]) .hamburger-btn { background: #2b2b2f; color: #e4e4e7; }
 
     .nav-actions {
       position: fixed;
@@ -586,7 +586,7 @@ export const stickyNotesAppStyles = css`
         mask-image: linear-gradient(to bottom, black 0%, black 40%, rgba(0,0,0,0.5) 75%, transparent 100%);
         -webkit-mask-image: linear-gradient(to bottom, black 0%, black 40%, rgba(0,0,0,0.5) 75%, transparent 100%);
       }
-      body.dark-theme .top-nav.scrolled::before {
+      :host([theme="dark"]) .top-nav.scrolled::before {
         background: rgba(18, 18, 20, 0.85);
       }
 

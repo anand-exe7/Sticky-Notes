@@ -163,6 +163,16 @@ export class StickyNotesApp extends LitElement {
     }
   }
 
+  updated(changedProperties: Map<string | number | symbol, unknown>) {
+    if (changedProperties.has('sidebarOpen')) {
+      if (this.sidebarOpen && window.innerWidth <= 768) {
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = '';
+      }
+    }
+  }
+
   private handleDragStart(e: DragEvent, note: StickyNote) {
     this.draggedNoteId = note.id;
     if (e.dataTransfer) {
@@ -202,8 +212,10 @@ export class StickyNotesApp extends LitElement {
     this.theme = this.theme === 'light' ? 'dark' : 'light';
     if (this.theme === 'dark') {
       document.body.classList.add('dark-theme');
+      this.setAttribute('theme', 'dark');
     } else {
       document.body.classList.remove('dark-theme');
+      this.removeAttribute('theme');
     }
   }
 
