@@ -257,8 +257,6 @@ export const stickyNotesAppStyles = css`
       position: fixed;
       top: 0; left: -320px; bottom: 0;
       width: 320px;
-      height: 100%;
-      height: 100dvh;
       background: #faf9f5;
       z-index: 1001;
       box-shadow: 4px 0 24px rgba(0,0,0,0.15);
