@@ -93,7 +93,7 @@ describe('NoteService', () => {
 
   it('should always place pinned notes at the top when sorting', () => {
     const zebra = service.create({ title: 'Zebra', content: 'Z', color: 'blue' });
-    const apple = service.create({ title: 'Apple', content: 'A', color: 'green' });
+    service.create({ title: 'Apple', content: 'A', color: 'green' });
     
     service.togglePin(zebra.id); 
 
