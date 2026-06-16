@@ -29,11 +29,29 @@ export const sortDropdownStyles = css`
     }
     .icon {
       font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      text-transform: none;
+      letter-spacing: normal;
+      word-wrap: normal;
+      white-space: nowrap;
+      direction: ltr;
+      -webkit-font-smoothing: antialiased;
+      font-feature-settings: 'liga';
       font-size: 16px;
       color: #464555;
     }
     .chevron {
       font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      text-transform: none;
+      letter-spacing: normal;
+      word-wrap: normal;
+      white-space: nowrap;
+      direction: ltr;
+      -webkit-font-smoothing: antialiased;
+      font-feature-settings: 'liga';
       font-size: 16px;
       color: #464555;
       transition: transform 0.2s;
@@ -81,6 +99,15 @@ export const sortDropdownStyles = css`
     }
     .check {
       font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      text-transform: none;
+      letter-spacing: normal;
+      word-wrap: normal;
+      white-space: nowrap;
+      direction: ltr;
+      -webkit-font-smoothing: antialiased;
+      font-feature-settings: 'liga';
       font-size: 16px;
       color: #3525cd;
       visibility: hidden;

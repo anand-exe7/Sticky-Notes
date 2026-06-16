@@ -108,7 +108,7 @@ export class StickyNoteForm extends LitElement {
     const contentLen = this.content.length;
 
     return html`
-      <div class="overlay" @click=${this.handleOverlayClick} @keydown=${this.handleKeyDown} role="dialog" aria-modal="true" aria-label="${isEditing ? 'Edit note' : 'Create new note'}">
+      <div class="overlay" @keydown=${this.handleKeyDown} role="dialog" aria-modal="true" aria-label="${isEditing ? 'Edit note' : 'Create new note'}">
         <div class="modal" style="background-color: ${this.noteBg}; transform: rotate(-1deg);">
           <div class="tape"></div>
 

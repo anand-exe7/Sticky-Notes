@@ -96,9 +96,20 @@ export const stickyNoteCardStyles = css`
     }
 
     @keyframes pinDrop {
-      0% { transform: translateX(-50%) translateY(-20px) scale(1.5) rotate(-45deg); opacity: 0; box-shadow: 4px 12px 10px rgba(0,0,0,0.2); }
-      60% { transform: translateX(-50%) translateY(1px) scale(0.95) rotate(5deg); opacity: 1; box-shadow: 1px 1px 2px rgba(0,0,0,0.6); }
-      100% { transform: translateX(-50%) translateY(0) scale(1) rotate(0deg); opacity: 1; }
+      0% { 
+        transform: translate(-30%, -30px) scale(1.6) rotate(15deg); 
+        opacity: 0; 
+      }
+      40% { 
+        opacity: 1; 
+      }
+      70% { 
+        transform: translate(-50%, 2px) scale(0.95) rotate(-2deg); 
+      }
+      100% { 
+        transform: translate(-50%, 0) scale(1) rotate(0deg); 
+        opacity: 1; 
+      }
     }
 
     /* Pin */
@@ -118,33 +129,16 @@ export const stickyNoteCardStyles = css`
       animation: tapeSlap 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
     }
 
-    
     .real-pin {
       position: absolute;
-      top: 10px;
+      top: -12px;
       left: 50%;
       transform: translateX(-50%);
-      width: 14px;
-      height: 14px;
-      background: conic-gradient(
-        from 0deg at 50% 50%,
-        #9ca3af 0deg,
-        #f3f4f6 45deg,
-        #6b7280 90deg,
-        #4b5563 135deg,
-        #f3f4f6 180deg,
-        #9ca3af 225deg,
-        #4b5563 270deg,
-        #f3f4f6 315deg,
-        #9ca3af 360deg
-      );
-      border-radius: 50%;
-      border: 0.5px solid rgba(0,0,0,0.2);
-      box-shadow: 
-        1px 2px 3px rgba(0,0,0,0.4),
-        inset 0 0 2px rgba(255,255,255,0.8);
+      width: 28px;
+      height: 28px;
+      background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><radialGradient id="g" cx="35%" cy="30%" r="65%"><stop offset="0%" stop-color="%23ff8a8a"/><stop offset="25%" stop-color="%23e22121"/><stop offset="70%" stop-color="%238c0707"/><stop offset="100%" stop-color="%23360000"/></radialGradient><linearGradient id="s" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="%23ffffff"/><stop offset="50%" stop-color="%239ca3af"/><stop offset="100%" stop-color="%234b5563"/></linearGradient><filter id="d" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="-3" dy="5" stdDeviation="2" flood-opacity="0.4"/></filter></defs><g filter="url(%23d)"><path d="M48,55 L22,88 L28,92 L54,60 Z" fill="url(%23s)"/><path d="M22,88 L18,97 L28,92 Z" fill="%23374151"/><ellipse cx="52" cy="55" rx="16" ry="7" fill="%235e0909" transform="rotate(35 52 55)"/><circle cx="62" cy="40" r="26" fill="url(%23g)"/><ellipse cx="53" cy="24" rx="12" ry="4" fill="white" opacity="0.8" transform="rotate(-40 53 24)"/></g></svg>') center/contain no-repeat;
       z-index: 20;
-      animation: pinDrop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      animation: pinDrop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
     }
 
     .title {

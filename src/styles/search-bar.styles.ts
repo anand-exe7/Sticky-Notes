@@ -32,6 +32,15 @@ export const searchBarStyles = css`
     }
     .icon {
       font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      text-transform: none;
+      letter-spacing: normal;
+      word-wrap: normal;
+      white-space: nowrap;
+      direction: ltr;
+      -webkit-font-smoothing: antialiased;
+      font-feature-settings: 'liga';
       font-size: 18px;
       color: #464555;
       user-select: none;

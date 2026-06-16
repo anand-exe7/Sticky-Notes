@@ -74,6 +74,15 @@ export const stickyNoteFormStyles = css`
       align-items: center;
       transition: color 0.15s, background 0.15s;
       font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      text-transform: none;
+      letter-spacing: normal;
+      word-wrap: normal;
+      white-space: nowrap;
+      direction: ltr;
+      -webkit-font-smoothing: antialiased;
+      font-feature-settings: 'liga';
       font-size: 20px;
     }
     .close-btn:hover { color: #ba1a1a; background: rgba(186,26,26,0.1); }
@@ -142,6 +151,15 @@ export const stickyNoteFormStyles = css`
     .color-swatch.selected::after {
       content: 'check';
       font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      text-transform: none;
+      letter-spacing: normal;
+      word-wrap: normal;
+      white-space: nowrap;
+      direction: ltr;
+      -webkit-font-smoothing: antialiased;
+      font-feature-settings: 'liga';
       font-size: 14px;
       color: rgba(0,0,0,0.6);
       position: absolute;
