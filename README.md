@@ -5,23 +5,21 @@
 ![Vite](https://img.shields.io/badge/Vite-B73BFE?style=for-the-badge&logo=vite&logoColor=FFD62E)
 ![Vitest](https://img.shields.io/badge/Vitest-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)
 
-A high-fidelity, interactive Sticky Notes Single Page Application (SPA) engineered with strict **Web Components (Lit)** and **TypeScript**. Developed to fulfill the Kaleyra Internship Project requirements.
+A high-performance Single Page Application (SPA) engineered using native **Web Components (Lit)** and **TypeScript**. 
 
-This application replicates the physical experience of a corkboard. It leverages advanced CSS grid layouts, physics-based animations, and a pure event-driven architecture to manage application state entirely in-memory without relying on external frameworks like React, Redux, or databases.
+This project implements a reactive, purely in-memory state management system without relying on external UI frameworks or state libraries. By leveraging strict Shadow DOM encapsulation and an event-driven unidirectional data flow, the application ensures high modularity and performance. The UI utilizes advanced CSS masonry layouts and customized rendering logic to simulate physical depth and interactive constraints.
 
 ---
 
-## ✨ Key Features
+## ✨ Features
 
-### 📋 Core Requirements
-- **Dashboard Grid**: A highly responsive masonry-style grid for dynamic note arrangement.
-- **CRUD Operations**: Complete Create, Read, Update, and Delete lifecycles stored seamlessly in-memory.
-- **Form Validation**: Strict validation for note creation (Title ≤ 100 chars, Content ≤ 1000 chars).
-- **Search & Filter**: Real-time debounce filtering by both title and content strings.
-- **Dynamic Sorting**: Intelligent sorting by `Creation Time`, `Last Updated`, and `Alphabetical (A-Z)`.
+- **Dynamic Corkboard Layout**: A fully responsive masonry-style grid that smoothly adapts to any screen size.
+- **Complete Note Management**: Seamlessly Create, Read, Update, and Delete your notes in real-time.
+- **Smart Search & Filtering**: Instantly find what you need with lightning-fast, debounced text filtering.
+- **Intelligent Sorting**: Organize your board by `Creation Time`, `Last Updated`, or `Alphabetical (A-Z)`.
 - **Note Pinning**: Physically "pin" priority notes to the top of the board with custom physics animations.
 
-### 🚀 Advanced Bonus Features
+### 🚀 Advanced Features
 - **Native Drag & Drop**: Freely reorganize notes on the board using the HTML5 Drag and Drop.
 - **Theme Support**: Global Light and Dark mode implemented via custom CSS variables.
 - **Undo Delete Mechanism**: A temporary toast state allowing instant recovery of accidentally deleted notes.
@@ -78,7 +76,7 @@ npm run test
 ---
 
 ## 👨‍💻 Author
-Developed as part of the **Kaleyra Internship Evaluation**.
+
 
 ---
 
