@@ -25,18 +25,25 @@ export class StickyNotesApp extends LitElement {
   @state() private theme: 'light' | 'dark' = 'light';
   @state() private sidebarOpen = false;
   @state() private showToast = false;
+  @state() private isScrolled = false;
   private toastTimeout?: number;
   private draggedNoteId: string | null = null;
 
   connectedCallback() {
     super.connectedCallback();
     window.addEventListener('keydown', this.handleGlobalKeyDown);
+    window.addEventListener('scroll', this.handleScroll);
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
     window.removeEventListener('keydown', this.handleGlobalKeyDown);
+    window.removeEventListener('scroll', this.handleScroll);
   }
+
+  private handleScroll = () => {
+    this.isScrolled = window.scrollY > 20;
+  };
 
   private handleGlobalKeyDown = (e: KeyboardEvent) => {
     
@@ -245,9 +252,29 @@ export class StickyNotesApp extends LitElement {
     const notes = this.filteredAndSorted;
 
     return html`
-      <button class="hamburger-btn" @click=${() => this.sidebarOpen = true} aria-label="Open Menu">
-        <span class="material-symbols-outlined">menu</span>
-      </button>
+      <div class="top-nav ${this.isScrolled ? 'scrolled' : ''}">
+        <div class="nav-top-row">
+          <button class="hamburger-btn" @click=${() => this.sidebarOpen = true} aria-label="Open Menu">
+            <span class="material-symbols-outlined">menu</span>
+          </button>
+          <div class="nav-actions">
+            <sort-dropdown
+              .value=${this.sortBy}
+              @sort-changed=${this.handleSort}
+            ></sort-dropdown>
+
+            <button class="theme-btn" @click=${this.toggleTheme} aria-label="Toggle theme">
+              <span class="material-symbols-outlined">${this.theme === 'dark' ? 'light_mode' : 'dark_mode'}</span>
+            </button>
+          </div>
+        </div>
+        <div class="search-container">
+          <search-bar
+            .value=${this.searchQuery}
+            @search-changed=${this.handleSearch}
+          ></search-bar>
+        </div>
+      </div>
 
       <div class="sidebar-backdrop ${this.sidebarOpen ? 'open' : ''}" @click=${() => this.sidebarOpen = false}></div>
       <aside class="sidebar ${this.sidebarOpen ? 'open' : ''}">
@@ -271,8 +298,9 @@ export class StickyNotesApp extends LitElement {
               </div>
             ` : html`<p class="empty-text">No recently deleted notes</p>`}
           </div>
-          <div class="sidebar-section">
-            <h3>Board Stats</h3>
+          <div style="margin-top: auto; display: flex; flex-direction: column; gap: 32px;">
+            <div class="sidebar-section">
+              <h3>Board Stats</h3>
             <div class="stat-row">
               <span>Total Notes</span>
               <strong>${this.notes.length}</strong>
@@ -282,7 +310,7 @@ export class StickyNotesApp extends LitElement {
               <strong>${this.notes.filter(n => n.pinned).length}</strong>
             </div>
           </div>
-          <div class="sidebar-section">
+          <div class="sidebar-section shortcuts">
             <h3>Keyboard Shortcuts</h3>
             <div class="shortcut-row">
               <span>New Note</span>
@@ -310,38 +338,22 @@ export class StickyNotesApp extends LitElement {
             </div>
             <div class="shortcut-row">
               <span>Pin Card</span>
-              <kbd>Ctrl + P</kbd>
+              <kbd>Alt + P</kbd>
+            </div>
             </div>
           </div>
         </div>
       </aside>
 
      
-      <div class="search-container">
-        <search-bar
-          .value=${this.searchQuery}
-          @search-changed=${this.handleSearch}
-        ></search-bar>
-      </div>
-
-      <div class="controls">
-        <sort-dropdown
-          .value=${this.sortBy}
-          @sort-changed=${this.handleSort}
-        ></sort-dropdown>
-
-        <button class="theme-btn" @click=${this.toggleTheme} aria-label="Toggle theme">
-          <span>${this.theme === 'dark' ? 'light_mode' : 'dark_mode'}</span>
-        </button>
-
+      <div class="floating-add">
         <div class="add-btn-wrapper">
           <button
             class="add-btn"
             @click=${this.handleAddNew}
             aria-label="Add new note"
           >
-            <div class="add-pin"></div>
-            <span>add</span>
+            <span class="material-symbols-outlined">add</span>
           </button>
           <span class="add-tooltip">New Note</span>
         </div>

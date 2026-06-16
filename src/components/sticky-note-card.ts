@@ -51,7 +51,7 @@ export class StickyNoteCard extends LitElement {
     } else if (e.key === "Delete" || e.key === "Backspace") {
       e.preventDefault();
       this.handleDelete(e);
-    } else if (e.key.toLowerCase() === "p" && (e.ctrlKey || e.metaKey)) {
+    } else if (e.key.toLowerCase() === "p" && e.altKey) {
       e.preventDefault();
       this.handlePin(e);
     }

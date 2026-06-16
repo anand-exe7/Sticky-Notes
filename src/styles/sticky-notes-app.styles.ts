@@ -53,20 +53,19 @@ export const stickyNotesAppStyles = css`
     }
     .add-btn span {
       font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      text-transform: none;
+      letter-spacing: normal;
+      word-wrap: normal;
+      white-space: nowrap;
+      direction: ltr;
+      -webkit-font-smoothing: antialiased;
+      font-feature-settings: 'liga';
       font-size: 28px;
       margin-top: 2px;
     }
-    .add-pin {
-      position: absolute;
-      top: -5px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 12px; height: 12px;
-      background: #eab308;
-      border-radius: 50%;
-      box-shadow: 1px 2px 4px rgba(0,0,0,0.5);
-      z-index: 10;
-    }
+
     
     .theme-btn {
       width: 44px;
@@ -88,6 +87,15 @@ export const stickyNotesAppStyles = css`
     }
     .theme-btn span {
       font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      text-transform: none;
+      letter-spacing: normal;
+      word-wrap: normal;
+      white-space: nowrap;
+      direction: ltr;
+      -webkit-font-smoothing: antialiased;
+      font-feature-settings: 'liga';
       font-size: 24px;
     }
 
@@ -230,34 +238,6 @@ export const stickyNotesAppStyles = css`
     }
 
     /* Sidebar and Hamburger Menu */
-    .hamburger-btn {
-      position: fixed;
-      top: 32px;
-      left: 32px;
-      z-index: 60;
-      width: 44px;
-      height: 44px;
-      border-radius: 8px;
-      background: #fff;
-      border: none;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #1b1b24;
-      transition: transform 0.2s, background 0.2s;
-    }
-    .hamburger-btn:hover {
-      background: #f5f2ff;
-      color: #3525cd;
-      transform: translateY(-2px);
-    }
-    .hamburger-btn span {
-      font-family: 'Material Symbols Outlined';
-      font-size: 24px;
-    }
-
     .sidebar-backdrop {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -277,6 +257,8 @@ export const stickyNotesAppStyles = css`
       position: fixed;
       top: 0; left: -320px; bottom: 0;
       width: 320px;
+      height: 100%;
+      height: 100dvh;
       background: #faf9f5;
       z-index: 1001;
       box-shadow: 4px 0 24px rgba(0,0,0,0.15);
@@ -316,16 +298,28 @@ export const stickyNotesAppStyles = css`
     }
     .sidebar-header button span {
       font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      text-transform: none;
+      letter-spacing: normal;
+      word-wrap: normal;
+      white-space: nowrap;
+      direction: ltr;
+      -webkit-font-smoothing: antialiased;
+      font-feature-settings: 'liga';
       font-size: 20px;
     }
     .sidebar-content {
       padding: 24px;
       flex: 1;
       overflow-y: auto;
+      display: flex;
+      flex-direction: column;
     }
     .sidebar-section {
       margin-bottom: 32px;
     }
+
     .sidebar-section h3 {
       font-size: 13px;
       text-transform: uppercase;
@@ -409,10 +403,78 @@ export const stickyNotesAppStyles = css`
     body.dark-theme .stat-row,
     body.dark-theme .shortcut-row,
     body.dark-theme .sidebar-section h3 { color: #a1a1aa; }
-    body.dark-theme .hamburger-btn { background: #2b2b2f; color: #e4e4e7; }
-    body.dark-theme .shortcut-row kbd { background: #3f3f46; color: #e4e4e7; box-shadow: 0 2px 0 rgba(0,0,0,0.3); }
+    /* We use a pseudo-element for the mobile blur so we can apply a gradient mask without fading the buttons */
+    .top-nav::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      z-index: -1;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
 
-    /* Board */
+    /* Desktop Layout - absolute positioning to match old layout */
+    .top-nav {
+      pointer-events: none;
+      z-index: 60;
+    }
+    
+    .hamburger-btn, .search-container, .nav-actions, .floating-add {
+      pointer-events: auto;
+    }
+
+    .hamburger-btn {
+      position: fixed;
+      top: 32px;
+      left: 32px;
+      z-index: 60;
+      width: 44px; height: 44px;
+      border-radius: 8px;
+      background: #fff;
+      border: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #1b1b24;
+      transition: transform 0.2s, background 0.2s;
+    }
+    .hamburger-btn:hover { background: #f5f2ff; color: #3525cd; transform: translateY(-2px); }
+    .hamburger-btn span {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      text-transform: none;
+      letter-spacing: normal;
+      word-wrap: normal;
+      white-space: nowrap;
+      direction: ltr;
+      -webkit-font-smoothing: antialiased;
+      font-feature-settings: 'liga';
+      font-size: 24px;
+    }
+    body.dark-theme .hamburger-btn { background: #2b2b2f; color: #e4e4e7; }
+
+    .nav-actions {
+      position: fixed;
+      top: 32px;
+      right: 32px;
+      z-index: 60;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 12px;
+    }
+
+    /* Floating Add Button */
+    .floating-add {
+      position: fixed;
+      top: 140px;
+      right: 32px;
+      z-index: 50;
+    }
     .board {
       box-sizing: border-box;
       min-height: 100vh;
@@ -459,16 +521,24 @@ export const stickyNotesAppStyles = css`
     }
     .empty-pin {
       position: absolute;
-      top: -8px;
+      top: -12px;
       left: 50%;
       transform: translateX(-50%);
-      width: 16px; height: 16px;
-      background: #ef4444;
-      border-radius: 50%;
-      box-shadow: 2px 4px 6px rgba(0,0,0,0.5);
+      width: 24px;
+      height: 24px;
+      background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><radialGradient id="g" cx="30%" cy="30%" r="70%"><stop offset="0%" stop-color="%23ffb3b3"/><stop offset="20%" stop-color="%23ef4444"/><stop offset="70%" stop-color="%23b91c1c"/><stop offset="100%" stop-color="%23450a0a"/></radialGradient><linearGradient id="s"><stop offset="0%" stop-color="%236b7280"/><stop offset="50%" stop-color="%23e5e7eb"/><stop offset="100%" stop-color="%234b5563"/></linearGradient><filter id="d"><feDropShadow dx="-2" dy="4" stdDeviation="2" flood-opacity="0.4"/></filter></defs><g filter="url(%23d)"><path d="M45,55 L25,85 L30,90 L55,60 Z" fill="url(%23s)"/><path d="M25,85 L20,95 L30,90 Z" fill="%234b5563"/><ellipse cx="50" cy="55" rx="15" ry="6" fill="%237f1d1d" transform="rotate(35 50 55)"/><circle cx="60" cy="40" r="26" fill="url(%23g)"/><circle cx="50" cy="28" r="5" fill="white" opacity="0.8"/></g></svg>') center/contain no-repeat;
     }
     .empty-icon {
       font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      text-transform: none;
+      letter-spacing: normal;
+      word-wrap: normal;
+      white-space: nowrap;
+      direction: ltr;
+      -webkit-font-smoothing: antialiased;
+      font-feature-settings: 'liga';
       font-size: 42px;
       color: #464555;
       opacity: 0.7;
@@ -487,38 +557,76 @@ export const stickyNotesAppStyles = css`
       text-align: center;
     }
 
-    /* Centered Search Bar */
     .search-container {
       position: fixed;
-      top: 32px;
       left: 50%;
+      top: 32px;
       transform: translateX(-50%);
       z-index: 50;
     }
 
-    @media (max-width: 640px) {
+    @media (max-width: 768px) {
+      /* Mobile Navbar Wrapper */
+      .top-nav {
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        display: flex;
+        flex-direction: column;
+        padding: 16px;
+        gap: 16px;
+        pointer-events: none; /* children have auto */
+      }
+      
+      .top-nav.scrolled::before {
+        opacity: 1;
+        background: rgba(235, 232, 225, 0.85);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        /* Extremely smooth fade out to prevent any banding/wavey lines */
+        mask-image: linear-gradient(to bottom, black 0%, black 40%, rgba(0,0,0,0.5) 75%, transparent 100%);
+        -webkit-mask-image: linear-gradient(to bottom, black 0%, black 40%, rgba(0,0,0,0.5) 75%, transparent 100%);
+      }
+      body.dark-theme .top-nav.scrolled::before {
+        background: rgba(18, 18, 20, 0.85);
+      }
+
+      .nav-top-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+      }
+
       .hamburger-btn {
-        top: 16px;
-        left: 16px;
-        width: 40px; height: 40px;
+        position: static;
       }
-      .controls {
-        top: 16px;
-        right: 16px;
-        gap: 12px;
+
+      .nav-actions {
+        position: static;
+        flex-direction: row;
+        align-items: center;
       }
-      .theme-btn, .add-btn-wrapper, .add-btn {
-        width: 40px; height: 40px;
-      }
+
       .search-container {
-        top: 72px; /* Push search bar below hamburger and top controls */
+        position: static;
+        transform: none;
+        width: 100%;
+        display: flex;
+        justify-content: center;
       }
+
       .board {
-        padding: 48px 16px 64px;
+        padding: 140px 16px 64px;
       }
       .notes-grid {
         gap: 24px;
-        margin-top: 120px; /* Push notes down below the search bar */
+        margin-top: 20px;
+      }
+      .floating-add {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        top: auto;
       }
     }
   `;
