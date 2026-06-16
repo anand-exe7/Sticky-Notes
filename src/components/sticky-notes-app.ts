@@ -387,7 +387,7 @@ export class StickyNotesApp extends LitElement {
                 ${this.searchQuery ? 'No matching notes' : 'Your board is empty'}
               </p>
               <p class="empty-sub">
-                ${this.searchQuery ? 'Try a different search term' : 'Click + to pin your first thought'}
+                ${this.searchQuery ? 'Try a different search term' : 'Start Creating Your Notes Now!'}
               </p>
             </div>
           </div>
