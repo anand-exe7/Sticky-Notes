@@ -83,9 +83,6 @@ export class StickyNoteForm extends LitElement {
     this.dispatchEvent(new CustomEvent('form-cancel', { bubbles: true, composed: true }));
   }
 
-  private handleOverlayClick(e: Event) {
-    if (e.target === e.currentTarget) this.cancel();
-  }
 
   private handleKeyDown(e: KeyboardEvent) {
     if (e.key === 'Escape') {
