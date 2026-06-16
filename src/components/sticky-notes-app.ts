@@ -20,11 +20,12 @@ export class StickyNotesApp extends LitElement {
   @state() private editingNote: StickyNote | null = null;
   @state() private _renderTick = 0;
 
-  @state() private deletedNote: StickyNote | null = null;
+  @state() private deletedNotes: StickyNote[] = [];
   @state() private noteToDelete: StickyNote | null = null;
   @state() private theme: 'light' | 'dark' = 'light';
   @state() private sidebarOpen = false;
-  private undoTimeout?: number;
+  @state() private showToast = false;
+  private toastTimeout?: number;
   private draggedNoteId: string | null = null;
 
   connectedCallback() {
@@ -49,7 +50,9 @@ export class StickyNotesApp extends LitElement {
       this.handleAddNew();
     } else if (e.key.toLowerCase() === 'z' && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
-      this.undoDelete();
+      if (this.deletedNotes.length > 0) {
+        this.restoreNote(this.deletedNotes[0].id);
+      }
     } else if (e.key === '/' && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
       const searchBar = this.shadowRoot?.querySelector('search-bar');
@@ -125,14 +128,15 @@ export class StickyNotesApp extends LitElement {
   private confirmDelete() {
     if (!this.noteToDelete) return;
     
-    this.deletedNote = this.noteToDelete;
+    this.deletedNotes = [this.noteToDelete, ...this.deletedNotes];
     this.notes = this.notes.filter(n => n.id !== this.noteToDelete!.id);
     this.noteToDelete = null;
+    this.showToast = true;
     this._renderTick++;
-    
-    if (this.undoTimeout) window.clearTimeout(this.undoTimeout);
-    this.undoTimeout = window.setTimeout(() => {
-      this.deletedNote = null;
+
+    if (this.toastTimeout) window.clearTimeout(this.toastTimeout);
+    this.toastTimeout = window.setTimeout(() => {
+      this.showToast = false;
     }, 5000);
   }
 
@@ -140,11 +144,14 @@ export class StickyNotesApp extends LitElement {
     this.noteToDelete = null;
   }
 
-  private undoDelete() {
-    if (this.deletedNote) {
-      this.notes = [this.deletedNote, ...this.notes];
-      this.deletedNote = null;
-      if (this.undoTimeout) window.clearTimeout(this.undoTimeout);
+  private restoreNote(id: string) {
+    const note = this.deletedNotes.find(n => n.id === id);
+    if (note) {
+      this.notes = [note, ...this.notes];
+      this.deletedNotes = this.deletedNotes.filter(n => n.id !== id);
+      if (this.deletedNotes.length === 0) {
+        this.showToast = false;
+      }
       this._renderTick++;
     }
   }
@@ -253,10 +260,14 @@ export class StickyNotesApp extends LitElement {
         <div class="sidebar-content">
           <div class="sidebar-section">
             <h3>Recently Deleted</h3>
-            ${this.deletedNote ? html`
-              <div class="deleted-item">
-                <span>${this.deletedNote.title}</span>
-                <button @click=${this.undoDelete}>Restore</button>
+            ${this.deletedNotes.length > 0 ? html`
+              <div style="display:flex; flex-direction:column; gap:8px; max-height:200px; overflow-y:auto; padding-right:4px;">
+                ${this.deletedNotes.map(n => html`
+                  <div class="deleted-item">
+                    <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${n.title}</span>
+                    <button @click=${() => this.restoreNote(n.id)}>Restore</button>
+                  </div>
+                `)}
               </div>
             ` : html`<p class="empty-text">No recently deleted notes</p>`}
           </div>
@@ -375,10 +386,10 @@ export class StickyNotesApp extends LitElement {
       ` : ''}
 
       
-      ${this.deletedNote ? html`
+      ${this.showToast && this.deletedNotes.length > 0 ? html`
         <div class="toast" role="alert">
           <span>Note deleted.</span>
-          <button @click=${this.undoDelete}>Undo</button>
+          <button @click=${() => this.restoreNote(this.deletedNotes[0].id)}>Undo</button>
         </div>
       ` : ''}
 
