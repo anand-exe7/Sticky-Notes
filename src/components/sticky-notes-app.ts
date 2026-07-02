@@ -1,13 +1,13 @@
 import { stickyNotesAppStyles } from '../styles/sticky-notes-app.styles.js';
 import { LitElement, html } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
-import { generateId } from '../utils/id-generator.js';
-import { type StickyNote, type SortOption, type NoteColor } from '../models/sticky-note.js';
+import { type StickyNote, type SortOption } from '../models/sticky-note.js';
 import type { NoteFormData } from './sticky-note-form.js';
 import './sticky-note-card.js';
 import './sticky-note-form.js';
 import './search-bar.js';
 import './sort-dropdown.js';
+import { api } from '../services/api.js';
 
 
 @customElement('sticky-notes-app')
@@ -29,10 +29,21 @@ export class StickyNotesApp extends LitElement {
   private toastTimeout?: number;
   private draggedNoteId: string | null = null;
 
-  connectedCallback() {
+  async connectedCallback() {
     super.connectedCallback();
     window.addEventListener('keydown', this.handleGlobalKeyDown);
     window.addEventListener('scroll', this.handleScroll);
+    await this.loadData();
+  }
+
+  private async loadData() {
+    try {
+      this.notes = await api.getNotes();
+      this.deletedNotes = await api.getTrashNotes();
+      this._renderTick++;
+    } catch (e) {
+      console.error('Failed to load notes', e);
+    }
   }
 
   disconnectedCallback() {
@@ -132,11 +143,13 @@ export class StickyNotesApp extends LitElement {
     }
   }
 
-  private confirmDelete() {
+  private async confirmDelete() {
     if (!this.noteToDelete) return;
     
-    this.deletedNotes = [this.noteToDelete, ...this.deletedNotes];
-    this.notes = this.notes.filter(n => n.id !== this.noteToDelete!.id);
+    const note = this.noteToDelete;
+    
+    this.deletedNotes = [note, ...this.deletedNotes];
+    this.notes = this.notes.filter(n => n.id !== note.id);
     this.noteToDelete = null;
     this.showToast = true;
     this._renderTick++;
@@ -145,13 +158,20 @@ export class StickyNotesApp extends LitElement {
     this.toastTimeout = window.setTimeout(() => {
       this.showToast = false;
     }, 5000);
+
+    try {
+      await api.deleteNote(note.id);
+    } catch (e) {
+      console.error('Failed to delete note', e);
+      await this.loadData();
+    }
   }
 
   private cancelDelete() {
     this.noteToDelete = null;
   }
 
-  private restoreNote(id: string) {
+  private async restoreNote(id: string) {
     const note = this.deletedNotes.find(n => n.id === id);
     if (note) {
       this.notes = [note, ...this.notes];
@@ -160,6 +180,13 @@ export class StickyNotesApp extends LitElement {
         this.showToast = false;
       }
       this._renderTick++;
+
+      try {
+        await api.restoreNote(id);
+      } catch (e) {
+        console.error('Failed to restore note', e);
+        await this.loadData();
+      }
     }
   }
 
@@ -219,40 +246,39 @@ export class StickyNotesApp extends LitElement {
     }
   }
 
-  private handleNotePin(e: CustomEvent) {
+  private async handleNotePin(e: CustomEvent) {
     const id = (e as CustomEvent<{ id: string }>).detail.id;
+    
     this.notes = this.notes.map(n =>
       n.id === id ? { ...n, pinned: !n.pinned, updatedAt: new Date() } : n
     );
     this._renderTick++;
+
+    try {
+      await api.togglePin(id);
+    } catch (err) {
+      console.error('Failed to pin note', err);
+      await this.loadData();
+    }
   }
 
-  private handleFormSubmit(e: CustomEvent) {
+  private async handleFormSubmit(e: CustomEvent) {
     const data = (e as CustomEvent<NoteFormData>).detail;
-    const now = new Date();
 
-    if (this.editingNote) {
-      this.notes = this.notes.map(n =>
-        n.id === this.editingNote!.id
-          ? { ...n, title: data.title, content: data.content, color: data.color as NoteColor, updatedAt: now }
-          : n
-      );
-    } else {
-      const newNote: StickyNote = {
-        id: generateId(),
-        title: data.title,
-        content: data.content,
-        color: data.color as NoteColor,
-        pinned: false,
-        createdAt: now,
-        updatedAt: now,
-      };
-      this.notes = [newNote, ...this.notes];
+    try {
+      if (this.editingNote) {
+        const updated = await api.updateNote(this.editingNote.id, data);
+        this.notes = this.notes.map(n => n.id === updated.id ? updated : n);
+      } else {
+        const newNote = await api.createNote(data);
+        this.notes = [newNote, ...this.notes];
+      }
+      this._renderTick++;
+      this.showForm = false;
+      this.editingNote = null;
+    } catch (err) {
+      console.error('Failed to save note', err);
     }
-
-    this._renderTick++;
-    this.showForm = false;
-    this.editingNote = null;
   }
 
   private handleFormCancel() {
