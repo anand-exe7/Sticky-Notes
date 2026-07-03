@@ -19,6 +19,7 @@ export class StickyNotesApp extends LitElement {
   @state() private showForm = false;
   @state() private editingNote: StickyNote | null = null;
   @state() private _renderTick = 0;
+  @state() private isLoading = true;
 
   @state() private deletedNotes: StickyNote[] = [];
   @state() private noteToDelete: StickyNote | null = null;
@@ -37,12 +38,15 @@ export class StickyNotesApp extends LitElement {
   }
 
   private async loadData() {
+    this.isLoading = true;
     try {
       this.notes = await api.getNotes();
       this.deletedNotes = await api.getTrashNotes();
       this._renderTick++;
     } catch (e) {
       console.error('Failed to load notes', e);
+    } finally {
+      this.isLoading = false;
     }
   }
 
@@ -287,6 +291,14 @@ export class StickyNotesApp extends LitElement {
   }
 
   render() {
+    if (this.isLoading) {
+      return html`
+        <div style="display: flex; justify-content: center; align-items: center; height: 100vh;">
+           <h2 style="color: #6B7280; font-family: sans-serif;">Loading your notes...</h2>
+        </div>
+      `;
+    }
+
     const notes = this.filteredAndSorted;
 
     return html`
