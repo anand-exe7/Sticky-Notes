@@ -1,7 +1,7 @@
 import type { StickyNote } from '../models/sticky-note.js';
 import type { NoteFormData } from '../components/sticky-note-form.js';
 
-const API_URL = 'http://localhost:8080/api/notes';
+const API_URL = 'https://sticky-notes-backend-w87x.onrender.com/api/notes';
 
 const parseDates = (note: any): StickyNote => ({
   ...note,
