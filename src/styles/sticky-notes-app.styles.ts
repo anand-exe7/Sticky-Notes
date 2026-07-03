@@ -195,8 +195,8 @@ export const stickyNotesAppStyles = css`
       to { opacity: 1; }
     }
     @keyframes slideUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
+      from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+      to { opacity: 1; transform: translateX(-50%) translateY(0); }
     }
 
     .add-tooltip {

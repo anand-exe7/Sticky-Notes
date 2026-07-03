@@ -37,8 +37,10 @@ export class StickyNotesApp extends LitElement {
     await this.loadData();
   }
 
-  private async loadData() {
-    this.isLoading = true;
+  private async loadData(showLoader = true) {
+    if (showLoader) {
+      this.isLoading = true;
+    }
     try {
       this.notes = await api.getNotes();
       this.deletedNotes = await api.getTrashNotes();
@@ -46,7 +48,9 @@ export class StickyNotesApp extends LitElement {
     } catch (e) {
       console.error('Failed to load notes', e);
     } finally {
-      this.isLoading = false;
+      if (showLoader) {
+        this.isLoading = false;
+      }
     }
   }
 
@@ -176,21 +180,26 @@ export class StickyNotesApp extends LitElement {
   }
 
   private async restoreNote(id: string) {
-    const note = this.deletedNotes.find(n => n.id === id);
-    if (note) {
-      this.notes = [note, ...this.notes];
-      this.deletedNotes = this.deletedNotes.filter(n => n.id !== id);
-      if (this.deletedNotes.length === 0) {
-        this.showToast = false;
-      }
-      this._renderTick++;
+    this.deletedNotes = this.deletedNotes.filter(n => n.id !== id);
+    this._renderTick++;
+    try {
+      await api.restoreNote(id);
+      await this.loadData();
+    } catch (e) {
+      console.error('Failed to restore note', e);
+      await this.loadData();
+    }
+  }
 
-      try {
-        await api.restoreNote(id);
-      } catch (e) {
-        console.error('Failed to restore note', e);
-        await this.loadData();
-      }
+  private async permanentDelete(id: string) {
+    this.deletedNotes = this.deletedNotes.filter(n => n.id !== id);
+    this._renderTick++;
+    try {
+      await api.permanentDeleteNote(id);
+      await this.loadData(false);
+    } catch (e) {
+      console.error('Failed to permanently delete note', e);
+      await this.loadData(false);
     }
   }
 
@@ -291,68 +300,6 @@ export class StickyNotesApp extends LitElement {
   }
 
   render() {
-    if (this.isLoading) {
-      return html`
-        <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; gap: 32px; background: transparent;">
-          <style>
-            .sticky-loader {
-              position: relative;
-              width: 80px;
-              height: 80px;
-              background: linear-gradient(180deg, #fef08a 0%, #fde047 100%);
-              border-radius: 2px;
-              transform-origin: top center;
-              animation: peel 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate;
-            }
-            .sticky-loader::before {
-              content: '';
-              position: absolute;
-              top: -12px;
-              left: 50%;
-              margin-left: -22px;
-              width: 44px;
-              height: 18px;
-              background: rgba(255, 255, 255, 0.5);
-              border-top: 1px solid rgba(255, 255, 255, 0.8);
-              border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-              transform: rotate(-3deg);
-              box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            }
-            .sticky-loader::after {
-              content: '';
-              position: absolute;
-              top: 25px;
-              left: 10px;
-              right: 10px;
-              height: 2px;
-              background: rgba(0, 0, 0, 0.08);
-              box-shadow: 0 14px 0 0 rgba(0, 0, 0, 0.08), 0 28px 0 0 rgba(0, 0, 0, 0.08);
-            }
-            @keyframes peel {
-              0% { 
-                transform: perspective(600px) rotateX(0deg) rotateZ(-2deg); 
-                box-shadow: 2px 4px 8px rgba(0,0,0,0.12); 
-              }
-              100% { 
-                transform: perspective(600px) rotateX(55deg) rotateZ(3deg); 
-                box-shadow: 5px 35px 25px rgba(0,0,0,0.15); 
-              }
-            }
-            .loading-text {
-              color: #4b5563;
-              font-family: system-ui, -apple-system, sans-serif;
-              font-size: 1.1rem;
-              font-weight: 600;
-              letter-spacing: 0.5px;
-              margin: 0;
-            }
-          </style>
-          <div class="sticky-loader"></div>
-          <h2 class="loading-text">Peeling your notes...</h2>
-        </div>
-      `;
-    }
-
     const notes = this.filteredAndSorted;
 
     return html`
@@ -396,7 +343,10 @@ export class StickyNotesApp extends LitElement {
                 ${this.deletedNotes.map(n => html`
                   <div class="deleted-item">
                     <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${n.title}</span>
-                    <button @click=${() => this.restoreNote(n.id)}>Restore</button>
+                    <div style="display: flex; gap: 8px;">
+                      <button @click=${() => this.restoreNote(n.id)} style="padding: 4px 8px; border-radius: 4px; border: 1px solid #d1d5db; background: #ffffff; color: #374151; cursor: pointer;">Restore</button>
+                      <button @click=${() => this.permanentDelete(n.id)} style="padding: 4px 8px; border-radius: 4px; border: 1px solid #fecaca; background: #fef2f2; color: #dc2626; cursor: pointer;">Delete</button>
+                    </div>
                   </div>
                 `)}
               </div>
@@ -470,7 +420,65 @@ export class StickyNotesApp extends LitElement {
         @note-delete=${this.handleNoteDelete}
         @note-pin=${this.handleNotePin}
       >
-        ${notes.length === 0 ? html`
+        ${this.isLoading ? html`
+          <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%; height: 100%; min-height: 50vh; gap: 32px; background: transparent;">
+            <style>
+              .sticky-loader {
+                position: relative;
+                width: 80px;
+                height: 80px;
+                background: linear-gradient(180deg, #fef08a 0%, #fde047 100%);
+                border-radius: 2px;
+                transform-origin: top center;
+                animation: peel 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate;
+              }
+              .sticky-loader::before {
+                content: '';
+                position: absolute;
+                top: -12px;
+                left: 50%;
+                margin-left: -22px;
+                width: 44px;
+                height: 18px;
+                background: rgba(255, 255, 255, 0.5);
+                border-top: 1px solid rgba(255, 255, 255, 0.8);
+                border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+                transform: rotate(-3deg);
+                box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+              }
+              .sticky-loader::after {
+                content: '';
+                position: absolute;
+                top: 25px;
+                left: 10px;
+                right: 10px;
+                height: 2px;
+                background: rgba(0, 0, 0, 0.08);
+                box-shadow: 0 14px 0 0 rgba(0, 0, 0, 0.08), 0 28px 0 0 rgba(0, 0, 0, 0.08);
+              }
+              @keyframes peel {
+                0% { 
+                  transform: perspective(600px) rotateX(0deg) rotateZ(-2deg); 
+                  box-shadow: 2px 4px 8px rgba(0,0,0,0.12); 
+                }
+                100% { 
+                  transform: perspective(600px) rotateX(55deg) rotateZ(3deg); 
+                  box-shadow: 5px 35px 25px rgba(0,0,0,0.15); 
+                }
+              }
+              .loading-text {
+                color: #4b5563;
+                font-family: system-ui, -apple-system, sans-serif;
+                font-size: 1.1rem;
+                font-weight: 600;
+                letter-spacing: 0.5px;
+                margin: 0;
+              }
+            </style>
+            <div class="sticky-loader"></div>
+            <h2 class="loading-text">Peeling your notes...</h2>
+          </div>
+        ` : notes.length === 0 ? html`
           <div class="empty-state" role="status" aria-live="polite">
             <div class="empty-card">
               <div class="empty-pin"></div>
