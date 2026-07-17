@@ -1,12 +1,22 @@
 export type NoteColor = 'yellow' | 'blue' | 'green' | 'pink' | 'orange';
 export type SortOption = 'createdAt' | 'updatedAt' | 'title' | 'custom';
 
+export interface ChecklistItem {
+  text: string;
+  isDone: boolean;
+}
+
 export interface StickyNote {
   id: string;
   title: string;
   content: string;
   color: NoteColor;
   pinned: boolean;
+  category: string;
+  isLocked: boolean;
+  password?: string;
+  isChecklist: boolean;
+  checklistItems: ChecklistItem[];
   createdAt: Date;
   updatedAt: Date;
 }

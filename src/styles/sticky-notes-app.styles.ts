@@ -99,11 +99,17 @@ export const stickyNotesAppStyles = css`
       font-size: 24px;
     }
 
-    .toast {
+    .toast-container {
       position: fixed;
       bottom: 32px;
       left: 50%;
       transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 100;
+    }
+    .toast {
       background: #1b1b24;
       color: #fff;
       padding: 12px 24px;
@@ -112,10 +118,15 @@ export const stickyNotesAppStyles = css`
       align-items: center;
       gap: 16px;
       box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-      z-index: 100;
       animation: slideUp 0.3s ease;
       font-family: 'Geist', sans-serif;
       font-size: 14px;
+    }
+    .toast.error {
+      background: #ba1a1a;
+    }
+    .toast.success {
+      background: #22c55e;
     }
     .toast button {
       background: none;

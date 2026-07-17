@@ -9,6 +9,12 @@ import './search-bar.js';
 import './sort-dropdown.js';
 import { api } from '../services/api.js';
 
+export interface Toast {
+  id: string;
+  message: string;
+  type: 'success' | 'error' | 'info';
+  action?: { label: string; handler: () => void };
+}
 
 @customElement('sticky-notes-app')
 export class StickyNotesApp extends LitElement {
@@ -25,10 +31,17 @@ export class StickyNotesApp extends LitElement {
   @state() private noteToDelete: StickyNote | null = null;
   @state() private theme: 'light' | 'dark' = 'light';
   @state() private sidebarOpen = false;
-  @state() private showToast = false;
+  @state() private toasts: Toast[] = [];
   @state() private isScrolled = false;
-  private toastTimeout?: number;
   private draggedNoteId: string | null = null;
+  
+  private showToastMessage(message: string, type: 'success' | 'error' | 'info' = 'info', action?: { label: string; handler: () => void }) {
+    const id = Math.random().toString(36).substring(2, 9);
+    this.toasts = [...this.toasts, { id, message, type, action }];
+    setTimeout(() => {
+      this.toasts = this.toasts.filter(t => t.id !== id);
+    }, 5000);
+  }
 
   async connectedCallback() {
     super.connectedCallback();
@@ -159,18 +172,19 @@ export class StickyNotesApp extends LitElement {
     this.deletedNotes = [note, ...this.deletedNotes];
     this.notes = this.notes.filter(n => n.id !== note.id);
     this.noteToDelete = null;
-    this.showToast = true;
+    
+    this.showToastMessage('Note deleted', 'info', {
+      label: 'Undo',
+      handler: () => this.restoreNote(note.id)
+    });
+    
     this._renderTick++;
-
-    if (this.toastTimeout) window.clearTimeout(this.toastTimeout);
-    this.toastTimeout = window.setTimeout(() => {
-      this.showToast = false;
-    }, 5000);
 
     try {
       await api.deleteNote(note.id);
-    } catch (e) {
+    } catch (e: any) {
       console.error('Failed to delete note', e);
+      this.showToastMessage(e.message || 'Failed to delete note', 'error');
       await this.loadData();
     }
   }
@@ -282,15 +296,18 @@ export class StickyNotesApp extends LitElement {
       if (this.editingNote) {
         const updated = await api.updateNote(this.editingNote.id, data);
         this.notes = this.notes.map(n => n.id === updated.id ? updated : n);
+        this.showToastMessage('Note updated successfully', 'success');
       } else {
         const newNote = await api.createNote(data);
         this.notes = [newNote, ...this.notes];
+        this.showToastMessage('Note created successfully', 'success');
       }
       this._renderTick++;
       this.showForm = false;
       this.editingNote = null;
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to save note', err);
+      this.showToastMessage(err.message || 'Failed to save note', 'error');
     }
   }
 
@@ -510,10 +527,14 @@ export class StickyNotesApp extends LitElement {
       ` : ''}
 
       
-      ${this.showToast && this.deletedNotes.length > 0 ? html`
-        <div class="toast" role="alert">
-          <span>Note deleted.</span>
-          <button @click=${() => this.restoreNote(this.deletedNotes[0].id)}>Undo</button>
+      ${this.toasts.length > 0 ? html`
+        <div class="toast-container">
+          ${this.toasts.map(t => html`
+            <div class="toast ${t.type}" role="alert">
+              <span>${t.message}</span>
+              ${t.action ? html`<button @click=${() => { t.action!.handler(); this.toasts = this.toasts.filter(toast => toast.id !== t.id); }}>${t.action.label}</button>` : ''}
+            </div>
+          `)}
         </div>
       ` : ''}
 
