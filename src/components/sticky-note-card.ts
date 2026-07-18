@@ -1,6 +1,7 @@
 import { stickyNoteCardStyles } from '../styles/sticky-note-card.styles.js';
 import { LitElement, html } from 'lit';
 import { customElement, property } from "lit/decorators.js";
+import { unsafeHTML } from "lit/directives/unsafe-html.js";
 import {
   NOTE_COLOR_MAP,
   type StickyNote,
@@ -76,7 +77,7 @@ export class StickyNoteCard extends LitElement {
         }
 
         <h3 class="title">${this.note.title}</h3>
-        <p class="content">${this.note.content}</p>
+        <div class="content">${unsafeHTML(this.note.content)}</div>
 
         <div class="footer">
           <span class="date">${formatDate(this.note.updatedAt)}</span>

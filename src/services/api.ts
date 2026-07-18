@@ -30,7 +30,10 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
-    if (!res.ok) throw new Error('Failed to create note');
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(errText || 'Failed to create note');
+    }
     const json = await res.json();
     return parseDates(json);
   },
@@ -41,7 +44,24 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
-    if (!res.ok) throw new Error('Failed to update note');
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(errText || 'Failed to update note');
+    }
+    const json = await res.json();
+    return parseDates(json);
+  },
+
+  async unlockNote(id: string, password: string): Promise<StickyNote> {
+    const res = await fetch(`${API_URL}/${id}/unlock`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password })
+    });
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(errText || 'Incorrect password');
+    }
     const json = await res.json();
     return parseDates(json);
   },

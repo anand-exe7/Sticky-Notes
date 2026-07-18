@@ -1,7 +1,9 @@
 import { stickyNoteFormStyles } from '../styles/sticky-note-form.styles.js';
 import { LitElement, html } from 'lit';
-import { customElement, property, state } from 'lit/decorators.js';
+import { customElement, property, state, query } from 'lit/decorators.js';
 import { NOTE_COLORS, NOTE_COLOR_MAP, type NoteColor, type StickyNote } from '../models/sticky-note.js';
+
+const EMOJIS = ['😀','😃','😄','😁','😆','😅','😂','🤣','🥲','😊','😇','🙂','🙃','😉','😌','😍','🥰','😘','😗','😙','😚','😋','😛','😝','😜','🤪','🤨','🧐','🤓','😎','🥸','🤩','🥳','😏','😒','😞','😔','😟','😕','🙁','☹️','😣','😖','😫','😩','🥺','😢','😭','😤','😠','😡','🤬','🤯','😳','🥵','🥶','😱','😨','😰','😥','😓','🤗','🤔','🤭','🤫','🤥','😶','😐','😑','😬','🙄','😯','😦','😧','😮','😲','🥱','😴','🤤','😪','😵','🤐','🥴','🤢','🤮','🤧','😷','🤒','🤕','🤑','🤠','😈','👿','👹','👺','🤡','💩','👻','💀','👽','👾','🤖','🎃','😺','😸','😹','😻','😼','😽','🙀','😿','😾'];
 
 export interface NoteFormData {
   title: string;
@@ -18,6 +20,55 @@ export class StickyNoteForm extends LitElement {
   @state() private color: NoteColor = 'yellow';
   @state() private titleError = '';
   @state() private contentError = '';
+  @state() private showEmoji = false;
+  
+  @state() private activeFormats = {
+    bold: false,
+    italic: false,
+    underline: false,
+    insertUnorderedList: false
+  };
+
+  @query('#note-content') private contentDiv!: HTMLElement;
+
+  protected firstUpdated() {
+    if (this.contentDiv) {
+      this.contentDiv.innerHTML = this.content;
+    }
+  }
+
+  private updateFormatState() {
+    this.activeFormats = {
+      bold: document.queryCommandState('bold'),
+      italic: document.queryCommandState('italic'),
+      underline: document.queryCommandState('underline'),
+      insertUnorderedList: document.queryCommandState('insertUnorderedList')
+    };
+  }
+
+  private format(command: string, e: Event, value?: string) {
+    e.preventDefault();
+    document.execCommand(command, false, value);
+    this.content = this.contentDiv.innerHTML;
+    this.updateFormatState();
+  }
+
+  private insertEmoji(emoji: string, e: Event) {
+    e.preventDefault();
+    document.execCommand('insertText', false, emoji);
+    this.showEmoji = false;
+    this.content = this.contentDiv.innerHTML;
+  }
+
+  private handleTitleInput(e: Event) {
+    this.noteTitle = (e.target as HTMLInputElement).value;
+    this.titleError = '';
+  }
+
+  private handleContentInput(e: Event) {
+    this.content = (e.target as HTMLElement).innerHTML;
+    this.contentError = '';
+  }
 
   static styles = stickyNoteFormStyles;
 
@@ -101,8 +152,7 @@ export class StickyNoteForm extends LitElement {
 
   render() {
     const isEditing = !!this.note;
-    const titleLen   = this.noteTitle.length;
-    const contentLen = this.content.length;
+    const contentLen = this.content.replace(/<[^>]*>?/gm, '').length;
 
     return html`
       <div class="overlay" @keydown=${this.handleKeyDown} role="dialog" aria-modal="true" aria-label="${isEditing ? 'Edit note' : 'Create new note'}">
@@ -114,50 +164,47 @@ export class StickyNoteForm extends LitElement {
             <button class="close-btn" @click=${this.cancel} aria-label="Close">close</button>
           </div>
 
-          <form @submit=${this.submit} novalidate>
-            <div class="field" style="margin-bottom: 12px;">
-              <label for="note-title">Title</label>
-             
-              <input id="note-title" type="text" class="${this.titleError ? 'error' : ''}" placeholder="Note title..." maxlength="100" .value=${this.noteTitle} @input=${(e: Event) => { this.noteTitle = (e.target as HTMLInputElement).value; this.titleError = ''; }} autocomplete="off" autofocus />
-             
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                ${this.titleError ? html`<span class="error-msg" role="alert">${this.titleError}</span>` : html`<span></span>`}
-                <span class="char-count ${titleLen > 90 ? 'warn' : ''}">${titleLen}/100</span>
-             
-                </div>
-            </div>
-
-            <div class="field" style="margin-bottom: 12px;">
-              <label for="note-content">Content</label>
-              <textarea id="note-content" class="${this.contentError ? 'error' : ''}" placeholder="Write your note here..." rows="5" maxlength="1000" .value=${this.content} @input=${(e: Event) => { this.content = (e.target as HTMLTextAreaElement).value; this.contentError = ''; }}></textarea>
-
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                
-                ${this.contentError ? html`<span class="error-msg" role="alert">${this.contentError}</span>` : html`<span></span>`}
-
-                <span class="char-count ${contentLen > 900 ? 'warn' : ''}">${contentLen}/1000</span>
+          <form @submit=${this.submit} novalidate style="display:flex; flex-direction:column; flex:1;">
+            
+            <div class="toolbar">
+              <button type="button" class="${this.activeFormats.bold ? 'active' : ''}" @mousedown=${(e:Event) => this.format('bold', e)} aria-label="Bold"><span class="material-symbols-outlined">format_bold</span></button>
+              <button type="button" class="${this.activeFormats.italic ? 'active' : ''}" @mousedown=${(e:Event) => this.format('italic', e)} aria-label="Italic"><span class="material-symbols-outlined">format_italic</span></button>
+              <button type="button" class="${this.activeFormats.underline ? 'active' : ''}" @mousedown=${(e:Event) => this.format('underline', e)} aria-label="Underline"><span class="material-symbols-outlined">format_underlined</span></button>
+              <button type="button" class="${this.activeFormats.insertUnorderedList ? 'active' : ''}" @mousedown=${(e:Event) => this.format('insertUnorderedList', e)} aria-label="Bullet List"><span class="material-symbols-outlined">format_list_bulleted</span></button>
+              <div class="emoji-wrapper">
+                <button type="button" class="${this.showEmoji ? 'active' : ''}" @click=${() => this.showEmoji = !this.showEmoji} aria-label="Emoji"><span class="material-symbols-outlined">add_reaction</span></button>
+                ${this.showEmoji ? html`<div class="emoji-picker">${EMOJIS.map(em => html`<span @mousedown=${(e:Event) => this.insertEmoji(em, e)}>${em}</span>`)}</div>` : ''}
               </div>
             </div>
 
-            <div class="field" style="margin-bottom: 16px;">
-              <label>Color</label>
+            <input id="note-title" type="text" class="${this.titleError ? 'error' : ''}" placeholder="Note Title" maxlength="100" .value=${this.noteTitle} @input=${this.handleTitleInput} autocomplete="off" autofocus />
+            ${this.titleError ? html`<span class="error-msg" role="alert">${this.titleError}</span>` : ''}
+
+            <div class="rich-textarea-wrapper ${this.contentError ? 'error' : ''}">
+              <div id="note-content" class="rich-textarea" contenteditable="true" placeholder="Start writing here..." @input=${this.handleContentInput} @keyup=${this.updateFormatState} @mouseup=${this.updateFormatState}></div>
+            </div>
+            ${this.contentError ? html`<span class="error-msg" role="alert">${this.contentError}</span>` : ''}
+
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span></span>
+              <span class="char-count ${contentLen > 900 ? 'warn' : ''}">${contentLen}/1000</span>
+            </div>
+
+            <div class="footer-section">
               <div class="color-row" role="radiogroup" aria-label="Note color">
                 ${NOTE_COLORS.map(c => html`
-                  <button type="button" class="color-swatch ${this.color === c.value ? 'selected' : ''}" style="background: ${c.hex};" aria-label="${c.label}" aria-pressed=${this.color === c.value} @click=${() => { this.color = c.value; }}>
-                </button>
+                  <button type="button" class="color-swatch ${this.color === c.value ? 'selected' : ''}" style="background: ${c.hex};" aria-label="${c.label}" aria-pressed=${this.color === c.value} @click=${() => { this.color = c.value; }}></button>
                 `)}
               </div>
-            </div>
 
-            <div class="actions">
-
-              <button type="submit" class="btn-save">
-                ${isEditing ? 'Save Changes' : 'Add Note'}
-              </button>
-
-              <button type="button" class="btn-cancel" @click=${this.cancel}>
-                Cancel
-              </button>
+              <div class="actions">
+                <button type="button" class="btn-cancel" @click=${this.cancel}>
+                  Discard
+                </button>
+                <button type="submit" class="btn-save">
+                  ${isEditing ? 'Save Changes' : 'Create Note'}
+                </button>
+              </div>
             </div>
           </form>
         </div>
