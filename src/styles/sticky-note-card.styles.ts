@@ -3,6 +3,7 @@ import { css } from 'lit';
 export const stickyNoteCardStyles = css`
     :host {
       display: block;
+      width: 240px;
       position: relative;
       z-index: 1;
     }
@@ -10,9 +11,10 @@ export const stickyNoteCardStyles = css`
     :host(:focus-within) {
       z-index: 100;
     }
-    * { touch-action: manipulation; }
+    * { touch-action: manipulation; box-sizing: border-box; }
     .card {
-      width: 240px;
+      width: 100%;
+      max-width: 240px;
       min-height: 240px;
       padding: 20px;
       border-radius: 2px;
@@ -165,6 +167,128 @@ export const stickyNoteCardStyles = css`
       white-space: pre-line;
       word-break: break-word;
     }
+    
+    .category-pill {
+      background: rgba(0,0,0,0.06);
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-family: 'Geist', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(0,0,0,0.7);
+      width: fit-content;
+      margin-bottom: 8px;
+      margin-top: -4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+    .category-pill:hover {
+      background: rgba(0, 0, 0, 0.15);
+      color: #1b1b24;
+    }
+
+    .locked-content {
+      position: relative;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .locked-text {
+      font-family: "Geist", sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      color: #464555;
+      filter: blur(8px);
+      opacity: 0.6;
+      user-select: none;
+      word-break: break-word;
+      white-space: pre-line;
+      transition: filter 0.4s, opacity 0.4s;
+    }
+    .locked-content:hover .locked-text {
+      filter: blur(12px);
+      opacity: 0.4;
+    }
+    .lock-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      transition: background 0.4s;
+    }
+    .locked-content:hover .lock-overlay {
+      background: rgba(255,255,255,0.05);
+    }
+    
+    .animated-lock-container {
+      width: 54px;
+      height: 54px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(0,0,0,0.8);
+      background: rgba(255,255,255,0.6);
+      border-radius: 50%;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.12), inset 0 2px 4px rgba(255,255,255,0.8);
+      border: 1px solid rgba(255,255,255,0.7);
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .locked-content:hover .animated-lock-container {
+      transform: scale(1.15) translateY(-4px);
+      box-shadow: 0 16px 48px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.9);
+      background: rgba(255,255,255,0.85);
+      color: #1b1b24;
+    }
+    
+    .animated-lock {
+      width: 24px;
+      height: 24px;
+    }
+
+    .animated-lock .lock-shackle {
+      transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transform-origin: 50% 100%;
+    }
+    .locked-content:hover .animated-lock .lock-shackle {
+      transform: translateY(-3px) scaleY(1.1);
+    }
+
+    /* Checklist */
+    .checklist-content {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .card-checklist-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 15px;
+      line-height: 1.4;
+      color: rgba(0,0,0,0.8);
+    }
+    .card-checklist-item span.material-symbols-outlined {
+      font-size: 18px;
+      color: rgba(0,0,0,0.5);
+      margin-top: 2px;
+    }
+    .card-checklist-item.done {
+      color: rgba(0,0,0,0.4);
+      text-decoration: line-through;
+    }
+    .card-checklist-item.done span.material-symbols-outlined {
+      color: rgba(0,0,0,0.4);
+    }
+
     .footer {
       display: flex;
       justify-content: space-between;
@@ -236,5 +360,32 @@ export const stickyNoteCardStyles = css`
     }
     .action-btn:focus-visible {
       outline: 2px solid #3525cd;
+    }
+
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 24px;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-block;
+      white-space: nowrap;
+      word-wrap: normal;
+      direction: ltr;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    @media (max-width: 500px) {
+      :host {
+        width: 100%;
+        max-width: 280px;
+      }
+      .card {
+        max-width: 100%;
+        min-height: 280px;
+        padding: 24px;
+      }
     }
   `;

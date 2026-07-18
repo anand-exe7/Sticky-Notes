@@ -5,10 +5,13 @@ export const stickyNotesAppStyles = css`
       display: block;
       min-height: 100vh;
       position: relative;
+      overflow-x: hidden;
+      width: 100%;
     }
 
     * {
-      touch-action: manipulation; /* Removes 300ms click delay on mobile */
+      touch-action: manipulation;
+      box-sizing: border-box;
     }
 
     /* Controls */
@@ -107,7 +110,7 @@ export const stickyNotesAppStyles = css`
       display: flex;
       flex-direction: column;
       gap: 8px;
-      z-index: 100;
+      z-index: 9999;
     }
     .toast {
       background: #1b1b24;
@@ -248,6 +251,99 @@ export const stickyNotesAppStyles = css`
       z-index: 10;
     }
 
+    .unlock-modal-backdrop {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.4);
+      backdrop-filter: blur(4px);
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.2s ease;
+    }
+    .unlock-modal {
+      background: #fff;
+      padding: 32px 24px;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 340px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      font-family: 'Geist', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+    .modal-lock-icon {
+      width: 54px;
+      height: 54px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(0,0,0,0.8);
+      background: rgba(255,255,255,0.6);
+      border-radius: 50%;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.12), inset 0 2px 4px rgba(255,255,255,0.8);
+      border: 1px solid rgba(255,255,255,0.7);
+      margin-bottom: 12px;
+    }
+    .modal-lock-icon .animated-lock {
+      width: 24px;
+      height: 24px;
+    }
+    .unlock-modal h3 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1b1b24;
+      margin: 0 0 8px 0;
+    }
+    .unlock-modal p {
+      font-size: 14px;
+      color: #464555;
+      margin: 0 0 24px 0;
+      text-align: center;
+      line-height: 1.4;
+    }
+    .unlock-modal-input {
+      background: rgba(0,0,0,0.04);
+      border: 1px solid transparent;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-family: 'Geist', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      color: #1b1b24;
+      width: 100%;
+      box-sizing: border-box;
+      outline: none;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .unlock-modal-input:focus {
+      background: rgba(0,0,0,0.06);
+      border-color: rgba(0,0,0,0.2);
+    }
+    .unlock-modal-input.error { border-color: #ba1a1a; background: rgba(186,26,26,0.05); }
+    .unlock-error {
+      font-family: 'Geist', sans-serif;
+      font-size: 12px;
+      color: #ba1a1a;
+      font-weight: 600;
+      margin-top: 8px;
+      align-self: flex-start;
+    }
+    .unlock-modal-actions {
+      display: flex;
+      gap: 12px;
+      width: 100%;
+      margin-top: 24px;
+    }
+    .btn-submit {
+      background: #1b1b24;
+      color: #fff;
+    }
+    .btn-submit:hover { background: #000; }
+
     /* Sidebar and Hamburger Menu */
     .sidebar-backdrop {
       position: fixed;
@@ -335,6 +431,35 @@ export const stickyNotesAppStyles = css`
       letter-spacing: 0.05em;
       color: #464555;
       margin: 0 0 16px 0;
+    }
+    
+    .category-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    
+    .cat-btn {
+      background: rgba(0,0,0,0.06);
+      border: none;
+      padding: 6px 12px;
+      border-radius: 12px;
+      font-family: 'Geist', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(0,0,0,0.7);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .cat-btn:hover {
+      background: rgba(0,0,0,0.1);
+      color: #1b1b24;
+    }
+    
+    .cat-btn.active {
+      background: #3525cd;
+      color: #fff;
     }
     .deleted-item {
       display: flex;

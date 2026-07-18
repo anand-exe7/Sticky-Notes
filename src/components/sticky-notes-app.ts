@@ -1,7 +1,7 @@
 import { stickyNotesAppStyles } from '../styles/sticky-notes-app.styles.js';
 import { LitElement, html } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
-import { type StickyNote, type SortOption } from '../models/sticky-note.js';
+import { type StickyNote, type SortOption, NOTE_COLOR_MAP } from '../models/sticky-note.js';
 import type { NoteFormData } from './sticky-note-form.js';
 import './sticky-note-card.js';
 import './sticky-note-form.js';
@@ -33,6 +33,14 @@ export class StickyNotesApp extends LitElement {
   @state() private sidebarOpen = false;
   @state() private toasts: Toast[] = [];
   @state() private isScrolled = false;
+  
+  @state() private selectedCategory: string | null = null;
+  
+  @state() private unlockedNoteIds = new Set<string>();
+  @state() private unlockTarget: { note: StickyNote, action: 'view' | 'edit' | 'delete' } | null = null;
+  @state() private unlockPassword = '';
+  @state() private unlockError = '';
+  
   private draggedNoteId: string | null = null;
   
   private showToastMessage(message: string, type: 'success' | 'error' | 'info' = 'info', action?: { label: string; handler: () => void }) {
@@ -117,6 +125,10 @@ export class StickyNotesApp extends LitElement {
       );
     }
 
+    if (this.selectedCategory) {
+      result = result.filter(n => n.category === this.selectedCategory);
+    }
+
     if (this.sortBy !== 'custom') {
       result.sort((a, b) => {
         if (this.sortBy === 'title') {
@@ -164,6 +176,63 @@ export class StickyNotesApp extends LitElement {
     }
   }
 
+  private handleCategoryFilter(e: CustomEvent) {
+    this.selectedCategory = (e as CustomEvent<{category: string}>).detail.category;
+  }
+
+  private handleUnlockRequest(e: CustomEvent) {
+    const { id, action } = (e as CustomEvent<{ id: string, action: 'view' | 'edit' | 'delete' }>).detail;
+    const note = this.notes.find(n => n.id === id);
+    if (note) {
+      this.unlockTarget = { note, action };
+      this.unlockPassword = '';
+      this.unlockError = '';
+    }
+  }
+
+  private handleUnlockKeydown(e: KeyboardEvent) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      this.verifyUnlockPassword();
+    }
+  }
+
+  private async verifyUnlockPassword() {
+    if (!this.unlockTarget) return;
+    
+    try {
+      const unlockedNote = await api.unlockNote(this.unlockTarget.note.id, this.unlockPassword);
+      const { action } = this.unlockTarget;
+      
+      const newUnlocked = new Set(this.unlockedNoteIds);
+      newUnlocked.add(unlockedNote.id);
+      this.unlockedNoteIds = newUnlocked;
+      
+      // Update local note state with the decrypted content
+      this.notes = this.notes.map(n => n.id === unlockedNote.id ? unlockedNote : n);
+      
+      // Store the password temporarily on the unlocked note so the edit form can display it
+      unlockedNote.password = this.unlockPassword;
+      
+      this.unlockTarget = null;
+      
+      if (action === 'edit') {
+        this.editingNote = unlockedNote;
+        this.showForm = true;
+      } else if (action === 'delete') {
+        this.noteToDelete = unlockedNote;
+      }
+    } catch (err: any) {
+      this.unlockError = err.message || 'Incorrect password';
+    }
+  }
+
+  private cancelUnlock() {
+    this.unlockTarget = null;
+    this.unlockPassword = '';
+    this.unlockError = '';
+  }
+
   private async confirmDelete() {
     if (!this.noteToDelete) return;
     
@@ -198,9 +267,11 @@ export class StickyNotesApp extends LitElement {
     this._renderTick++;
     try {
       await api.restoreNote(id);
+      this.showToastMessage('Note restored', 'success');
       await this.loadData();
-    } catch (e) {
+    } catch (e: any) {
       console.error('Failed to restore note', e);
+      this.showToastMessage(e.message || 'Failed to restore note', 'error');
       await this.loadData();
     }
   }
@@ -210,9 +281,11 @@ export class StickyNotesApp extends LitElement {
     this._renderTick++;
     try {
       await api.permanentDeleteNote(id);
+      this.showToastMessage('Note permanently deleted', 'info');
       await this.loadData(false);
-    } catch (e) {
+    } catch (e: any) {
       console.error('Failed to permanently delete note', e);
+      this.showToastMessage(e.message || 'Failed to permanently delete note', 'error');
       await this.loadData(false);
     }
   }
@@ -318,6 +391,7 @@ export class StickyNotesApp extends LitElement {
 
   render() {
     const notes = this.filteredAndSorted;
+    const categories = Array.from(new Set(this.notes.map(n => n.category).filter(Boolean)));
 
     return html`
       <div class="top-nav ${this.isScrolled ? 'scrolled' : ''}">
@@ -353,6 +427,19 @@ export class StickyNotesApp extends LitElement {
           </button>
         </div>
         <div class="sidebar-content">
+          <div class="sidebar-section">
+            <h3>Categories</h3>
+            <div class="category-list">
+              <button class="cat-btn ${this.selectedCategory === null ? 'active' : ''}" @click=${() => this.selectedCategory = null}>
+                All Notes
+              </button>
+              ${categories.map(cat => html`
+                <button class="cat-btn ${this.selectedCategory === cat ? 'active' : ''}" @click=${() => this.selectedCategory = cat}>
+                  #${cat}
+                </button>
+              `)}
+            </div>
+          </div>
           <div class="sidebar-section">
             <h3>Recently Deleted</h3>
             ${this.deletedNotes.length > 0 ? html`
@@ -436,6 +523,8 @@ export class StickyNotesApp extends LitElement {
         @note-edit=${this.handleNoteEdit}
         @note-delete=${this.handleNoteDelete}
         @note-pin=${this.handleNotePin}
+        @note-unlock-request=${this.handleUnlockRequest}
+        @category-filter=${this.handleCategoryFilter}
       >
         ${this.isLoading ? html`
           <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%; height: 100%; min-height: 50vh; gap: 32px; background: transparent;">
@@ -511,7 +600,7 @@ export class StickyNotesApp extends LitElement {
         ` : html`
           <div class="notes-grid">
             ${notes.map(note => html`
-              <sticky-note-card .note=${note} draggable="true" @dragstart=${(e: DragEvent) => this.handleDragStart(e, note)} @dragover=${(e: DragEvent) => this.handleDragOver(e)} @drop=${(e: DragEvent) => this.handleDrop(e, note)}></sticky-note-card>
+              <sticky-note-card .note=${note} .isUnlocked=${this.unlockedNoteIds.has(note.id)} draggable="true" @dragstart=${(e: DragEvent) => this.handleDragStart(e, note)} @dragover=${(e: DragEvent) => this.handleDragOver(e)} @drop=${(e: DragEvent) => this.handleDrop(e, note)}></sticky-note-card>
             `)}
           </div>
         `}
@@ -521,6 +610,7 @@ export class StickyNotesApp extends LitElement {
       ${this.showForm ? html`
         <sticky-note-form
           .note=${this.editingNote}
+          .existingTitles=${this.notes.map(n => n.title)}
           @note-submit=${this.handleFormSubmit}
           @form-cancel=${this.handleFormCancel}
         ></sticky-note-form>
@@ -548,6 +638,28 @@ export class StickyNotesApp extends LitElement {
             <div class="confirm-actions">
               <button class="confirm-btn btn-cancel" @click=${this.cancelDelete}>Cancel</button>
               <button class="confirm-btn btn-delete" @click=${this.confirmDelete}>Delete</button>
+            </div>
+          </div>
+        </div>
+      ` : ''}
+
+      ${this.unlockTarget ? html`
+        <div class="unlock-modal-backdrop" @click=${this.cancelUnlock}>
+          <div class="unlock-modal" @click=${(e: Event) => e.stopPropagation()} style="background-color: ${NOTE_COLOR_MAP[this.unlockTarget.note.color] || '#fff'}; transform: rotate(${this.unlockTarget.note.id.charCodeAt(0) % 2 === 0 ? '-1deg' : '1deg'});">
+            <div class="modal-tape"></div>
+            <div class="modal-lock-icon">
+              <svg class="animated-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path class="lock-shackle" d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+            </div>
+            <h3>Unlock Note</h3>
+            <p>Enter password to unlock "${this.unlockTarget.note.title}"</p>
+            <input type="password" class="unlock-modal-input ${this.unlockError ? 'error' : ''}" placeholder="Enter password" .value=${this.unlockPassword} @input=${(e: Event) => { this.unlockPassword = (e.target as HTMLInputElement).value; this.unlockError = ''; }} @keydown=${(e: KeyboardEvent) => this.handleUnlockKeydown(e)} autofocus />
+            ${this.unlockError ? html`<span class="unlock-error">${this.unlockError}</span>` : ''}
+            <div class="unlock-modal-actions">
+              <button class="confirm-btn btn-cancel" @click=${this.cancelUnlock}>Cancel</button>
+              <button class="confirm-btn btn-submit" @click=${() => this.verifyUnlockPassword()}>Unlock</button>
             </div>
           </div>
         </div>
