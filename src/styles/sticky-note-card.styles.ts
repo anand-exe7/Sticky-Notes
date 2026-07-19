@@ -12,10 +12,27 @@ export const stickyNoteCardStyles = css`
       z-index: 100;
     }
     * { touch-action: manipulation; box-sizing: border-box; }
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 24px;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-block;
+      white-space: nowrap;
+      word-wrap: normal;
+      direction: ltr;
+      -webkit-font-feature-settings: 'liga';
+      -webkit-font-smoothing: antialiased;
+    }
     .card {
       width: 100%;
       max-width: 240px;
       min-height: 240px;
+      max-height: 340px;
+      height: fit-content;
       padding: 20px;
       border-radius: 2px;
       display: flex;
@@ -167,6 +184,12 @@ export const stickyNoteCardStyles = css`
       white-space: pre-line;
       word-break: break-word;
     }
+    .content p {
+      margin: 0 0 8px 0;
+    }
+    .content p:last-child {
+      margin-bottom: 0;
+    }
     
     .category-pill {
       background: rgba(0,0,0,0.06);
@@ -192,8 +215,6 @@ export const stickyNoteCardStyles = css`
     .locked-content {
       position: relative;
       flex: 1;
-      display: flex;
-      flex-direction: column;
       overflow: hidden;
       cursor: pointer;
     }

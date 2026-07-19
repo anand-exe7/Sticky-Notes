@@ -2,7 +2,22 @@ import { css } from 'lit';
 
 export const stickyNoteFormStyles = css`
     :host { display: block; touch-action: manipulation; }
-
+    * { box-sizing: border-box; }
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 24px;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-block;
+      white-space: nowrap;
+      word-wrap: normal;
+      direction: ltr;
+      -webkit-font-feature-settings: 'liga';
+      -webkit-font-smoothing: antialiased;
+    }
     .overlay {
       position: fixed;
       inset: 0;
@@ -22,8 +37,10 @@ export const stickyNoteFormStyles = css`
 
     .modal {
       width: 100%;
-      max-width: 440px;
-      min-height: 480px;
+      max-width: 500px;
+      height: 75vh;
+      min-height: 600px;
+      max-height: 850px;
       border-radius: 4px 4px 28px 4px; /* Post-it curl effect */
       padding: 36px 28px 24px;
       display: flex;
@@ -69,16 +86,29 @@ export const stickyNoteFormStyles = css`
     }
 
     .modal-header {
-      position: absolute;
-      top: 12px;
-      right: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 20px;
       z-index: 20;
+      width: 100%;
+      flex-shrink: 0;
+    }
+    .header-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+    }
+    .header-bottom-row {
+      display: flex;
+      width: 100%;
     }
     .modal-title { display: none; }
     .close-btn {
       background: rgba(255,255,255,0.4);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border: 1px solid rgba(255,255,255,0.5);
       cursor: pointer;
       padding: 6px;
@@ -86,27 +116,33 @@ export const stickyNoteFormStyles = css`
       color: rgba(0,0,0,0.6);
       display: flex;
       align-items: center;
-      transition: all 0.2s;
-      font-family: 'Material Symbols Outlined';
-      font-weight: normal;
-      font-size: 20px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      justify-content: center;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     }
-    .close-btn:hover { color: #ba1a1a; background: rgba(255,255,255,0.8); transform: rotate(90deg); }
+    .close-btn span {
+      font-size: 20px;
+    }
+    .close-btn:hover { 
+      color: #ba1a1a; 
+      background: rgba(255,255,255,0.9); 
+      transform: rotate(90deg); 
+      box-shadow: 0 4px 12px rgba(186,26,26,0.15);
+    }
 
-    /* Glassmorphism Toolbar */
     .toolbar {
       display: flex;
       gap: 6px;
       margin-bottom: 16px;
-      background: rgba(255, 255, 255, 0.45);
-      backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
+      background: rgba(255, 255, 255, 0.5);
+      backdrop-filter: blur(32px);
+      -webkit-backdrop-filter: blur(32px);
       padding: 6px 8px;
       border-radius: 12px;
-      border: 1px solid rgba(255,255,255,0.7);
-      box-shadow: 0 4px 24px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.5);
+      border: 1px solid rgba(255,255,255,0.8);
+      box-shadow: 0 4px 24px rgba(0,0,0,0.1), inset 0 2px 4px rgba(255,255,255,0.7);
       width: fit-content;
+      flex-shrink: 0;
     }
     .toolbar button {
       background: transparent;
@@ -151,7 +187,7 @@ export const stickyNoteFormStyles = css`
       padding: 12px;
       box-shadow: 0 8px 32px rgba(0,0,0,0.15);
       display: grid;
-      grid-template-columns: repeat(7, 1fr);
+      grid-template-columns: repeat(auto-fill, minmax(32px, 1fr));
       gap: 6px;
       z-index: 300;
       width: calc(100vw - 48px);
@@ -159,11 +195,6 @@ export const stickyNoteFormStyles = css`
       max-height: 200px;
       overflow-y: auto;
       border: 1px solid rgba(255,255,255,0.6);
-    }
-    @media (max-width: 400px) {
-      .emoji-picker {
-        grid-template-columns: repeat(6, 1fr);
-      }
     }
     .emoji-picker span {
       cursor: pointer;
@@ -176,8 +207,7 @@ export const stickyNoteFormStyles = css`
     }
     .emoji-picker span:hover { background: #f0f0f0; transform: scale(1.1); }
 
-    /* Inputs */
-    input[type="text"] {
+    #note-title {
       background: rgba(0,0,0,0.03);
       border: none;
       padding: 8px 12px;
@@ -190,26 +220,68 @@ export const stickyNoteFormStyles = css`
       margin-bottom: 12px;
       border-bottom: 2px dashed rgba(0,0,0,0.15);
       transition: background 0.2s, border-color 0.2s;
+      flex-shrink: 0;
     }
-    input[type="text"]:hover, .rich-textarea:hover {
+    #note-title:hover, .rich-textarea:hover {
       background: rgba(0,0,0,0.06);
     }
-    input[type="text"]:focus { 
+    #note-title:focus { 
       border-bottom: 2px solid rgba(0,0,0,0.3); 
       background: rgba(0,0,0,0.08);
     }
-    input[type="text"]::placeholder { color: rgba(0,0,0,0.4); font-weight: 700; }
-    input[type="text"].error {
+    #note-title::placeholder { color: rgba(0,0,0,0.4); font-weight: 700; }
+    #note-title.error {
       border-color: #ba1a1a;
       background: rgba(186,26,26,0.05);
     }
+
+    .category-input {
+      background: rgba(255, 255, 255, 0.5);
+      border: 1px solid rgba(255,255,255,0.7);
+      padding: 8px 14px;
+      border-radius: 14px;
+      font-family: 'Geist', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: rgba(0,0,0,0.8);
+      flex: 1;
+      max-width: 200px;
+      margin-right: 12px;
+      outline: none;
+      text-transform: uppercase;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: inset 0 2px 4px rgba(255,255,255,0.6), 0 2px 8px rgba(0,0,0,0.05);
+      transition: all 0.3s ease;
+    }
+    .category-input:focus {
+      background: rgba(255, 255, 255, 0.7);
+      box-shadow: inset 0 2px 4px rgba(255,255,255,0.8), 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .category-input::placeholder { color: rgba(0,0,0,0.3); text-transform: none; }
 
     .rich-textarea-wrapper {
       display: flex;
       flex-direction: column;
       flex-grow: 1;
-      min-height: 200px;
-      max-height: 400px;
+      height: 100%;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(0,0,0,0.15) transparent;
+      padding-right: 8px;
+    }
+    .rich-textarea-wrapper::-webkit-scrollbar {
+      width: 6px;
+    }
+    .rich-textarea-wrapper::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .rich-textarea-wrapper::-webkit-scrollbar-thumb {
+      background: rgba(0,0,0,0.25);
+      border-radius: 3px;
+    }
+    .rich-textarea-wrapper::-webkit-scrollbar-thumb:hover {
+      background: rgba(0,0,0,0.4);
     }
     .rich-textarea-wrapper.error .rich-textarea {
       border-color: #ba1a1a;
@@ -241,6 +313,159 @@ export const stickyNoteFormStyles = css`
       pointer-events: none;
     }
     
+    .mode-toggle {
+      position: relative;
+      display: flex;
+      background: rgba(255,255,255,0.45);
+      border-radius: 12px;
+      padding: 4px;
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255,255,255,0.7);
+      box-shadow: inset 0 2px 4px rgba(255,255,255,0.5), 0 4px 12px rgba(0,0,0,0.05);
+      z-index: 1;
+      width: fit-content;
+    }
+    .mode-slider {
+      position: absolute;
+      top: 4px;
+      bottom: 4px;
+      width: calc(50% - 4px);
+      background: rgba(255,255,255,0.9);
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1), inset 0 2px 4px rgba(255,255,255,1);
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      z-index: -1;
+    }
+    .mode-slider.left { transform: translateX(0); }
+    .mode-slider.right { transform: translateX(100%); }
+
+    .mode-toggle button {
+      background: transparent !important;
+      box-shadow: none !important;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-family: 'Geist', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: rgba(0,0,0,0.5);
+      cursor: pointer;
+      transition: color 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      text-align: center;
+      flex: 1;
+    }
+    .mode-toggle button:hover {
+      color: rgba(0,0,0,0.8);
+    }
+    .mode-toggle button.active {
+      color: #1b1b24;
+    }
+    
+    .checklist-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex-grow: 1;
+      height: 100%;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(0,0,0,0.15) transparent;
+      padding-right: 8px;
+    }
+    .checklist-wrapper::-webkit-scrollbar {
+      width: 6px;
+    }
+    .checklist-wrapper::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .checklist-wrapper::-webkit-scrollbar-thumb {
+      background: rgba(0,0,0,0.25);
+      border-radius: 3px;
+    }
+    .checklist-wrapper::-webkit-scrollbar-thumb:hover {
+      background: rgba(0,0,0,0.4);
+    }
+    .checklist-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255,255,255,0.5);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 8px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.7);
+      box-shadow: inset 0 2px 4px rgba(255,255,255,0.6), 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .custom-checkbox {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      accent-color: #3525cd;
+    }
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 24px;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-block;
+      white-space: nowrap;
+      word-wrap: normal;
+      direction: ltr;
+      -webkit-font-smoothing: antialiased;
+    }
+    .checklist-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      font-family: 'Geist', sans-serif;
+      font-size: 15px;
+      color: #1b1b24;
+    }
+    .checklist-input.done {
+      text-decoration: line-through;
+      color: rgba(0,0,0,0.4);
+    }
+    .btn-remove-item {
+      background: transparent;
+      border: none;
+      color: rgba(0,0,0,0.4);
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, color 0.2s;
+    }
+    .btn-remove-item:hover {
+      background: rgba(186,26,26,0.1);
+      color: #ba1a1a;
+    }
+    .btn-remove-item span { font-size: 18px; }
+    
+    .btn-add-item {
+      align-self: flex-start;
+      background: rgba(0,0,0,0.04);
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-family: 'Geist', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(0,0,0,0.7);
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-top: 8px;
+      flex-shrink: 0;
+    }
+    .btn-add-item:hover { background: rgba(0,0,0,0.08); color: #1b1b24; }
+
     .error-msg {
       font-family: 'Geist', sans-serif;
       font-size: 12px;
@@ -259,14 +484,122 @@ export const stickyNoteFormStyles = css`
     .char-count.warn { color: #ba1a1a; }
 
     .footer-section {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
       margin-top: auto;
       padding-top: 24px;
+      flex-shrink: 0;
+    }
+
+    .footer-top {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .lock-section {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .lock-toggle {
+      background: rgba(255, 255, 255, 0.4);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.6);
+      cursor: pointer;
+      padding: 6px 12px;
+      border-radius: 12px;
+      color: rgba(0,0,0,0.7);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      justify-content: center;
+      transition: all 0.2s;
+      font-family: 'Geist', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .lock-toggle:hover { background: rgba(255,255,255,0.8); color: #1b1b24; }
+    .lock-toggle.locked {
+      background: #1b1b24;
+      color: #fff;
+      border-color: #000;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .lock-toggle span.material-symbols-outlined { 
+      font-size: 18px; 
+    }
+
+    .password-input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .password-input {
+      background: rgba(255, 255, 255, 0.6);
+      border: 1px solid rgba(255,255,255,0.8);
+      padding: 10px 40px 10px 16px;
+      border-radius: 12px;
+      font-family: 'Geist', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      color: #1b1b24;
+      width: 160px;
+      outline: none;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: inset 0 2px 4px rgba(255,255,255,0.6), 0 2px 8px rgba(0,0,0,0.05);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .password-input:focus { 
+      background: rgba(255, 255, 255, 0.9); 
+      border-color: rgba(0,0,0,0.2);
+      box-shadow: inset 0 2px 4px rgba(255,255,255,1), 0 4px 12px rgba(0,0,0,0.1);
+      transform: translateY(-1px);
+    }
+    .password-input::placeholder {
+      color: rgba(0,0,0,0.4);
+      font-weight: 500;
+    }
+    .password-input.error { 
+      border-color: #ba1a1a; 
+      background: rgba(186,26,26,0.1); 
+      color: #ba1a1a;
+    }
+    .password-input.error::placeholder { color: rgba(186,26,26,0.6); }
+
+    .toggle-password-btn {
+      position: absolute;
+      right: 4px;
+      background: transparent;
+      border: none;
+      color: rgba(0,0,0,0.5);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+      border-radius: 4px;
+      transition: color 0.2s;
+    }
+    .toggle-password-btn:hover {
+      color: rgba(0,0,0,0.8);
+    }
+    .toggle-password-btn span {
+      font-family: 'Material Symbols Outlined';
+      font-size: 18px;
     }
 
     .color-row {
       display: flex;
       gap: 12px;
-      margin-bottom: 24px;
     }
     .color-swatch {
       width: 32px;
@@ -325,4 +658,82 @@ export const stickyNoteFormStyles = css`
       transition: background 0.2s;
     }
     .btn-cancel:hover { background: rgba(0,0,0,0.12); color: #000; }
+
+    @media (max-width: 500px) {
+      .modal {
+        height: 85vh;
+        max-height: 580px;
+        padding: 24px 16px 20px;
+        max-width: 95%;
+        border-radius: 4px 4px 20px 4px;
+      }
+      .modal-header {
+        margin-bottom: 16px;
+      }
+      .category-input {
+        max-width: none;
+        margin-right: 8px;
+        font-size: 12px;
+      }
+      .mode-toggle {
+        width: 100%;
+        padding: 4px;
+      }
+      .mode-toggle button {
+        padding: 10px 8px;
+        font-size: 13px;
+        white-space: nowrap;
+      }
+      .toolbar {
+        flex-wrap: wrap;
+        padding: 4px 6px;
+      }
+      .toolbar button {
+        padding: 4px;
+      }
+      .toolbar .material-symbols-outlined {
+        font-size: 20px;
+      }
+      .emoji-picker {
+        left: auto;
+        right: -10px;
+        transform: none;
+      }
+      #note-title {
+        font-size: 20px;
+        padding: 6px 8px;
+      }
+      .rich-textarea {
+        font-size: 14px;
+        padding: 8px;
+      }
+      .footer-section {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .footer-top {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .color-row {
+        justify-content: space-between;
+      }
+      .lock-section {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .lock-toggle {
+        width: 100%;
+        padding: 10px;
+      }
+      .password-input-wrapper, .password-input {
+        width: 100%;
+      }
+      .actions {
+        width: 100%;
+      }
+      .btn-save, .btn-cancel {
+        padding: 12px 16px;
+      }
+    }
   `;

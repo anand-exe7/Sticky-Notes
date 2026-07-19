@@ -7,6 +7,8 @@ export const stickyNotesAppStyles = css`
       position: relative;
       overflow-x: hidden;
       width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
     }
 
     * {
@@ -15,6 +17,22 @@ export const stickyNotesAppStyles = css`
     }
 
     /* Controls */
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 24px;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-block;
+      white-space: nowrap;
+      word-wrap: normal;
+      direction: ltr;
+      -webkit-font-feature-settings: 'liga';
+      -webkit-font-smoothing: antialiased;
+    }
+
     .controls {
       position: fixed;
       top: 32px;
@@ -209,8 +227,8 @@ export const stickyNotesAppStyles = css`
       to { opacity: 1; }
     }
     @keyframes slideUp {
-      from { opacity: 0; transform: translateX(-50%) translateY(20px); }
-      to { opacity: 1; transform: translateX(-50%) translateY(0); }
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     .add-tooltip {
@@ -305,10 +323,16 @@ export const stickyNotesAppStyles = css`
       text-align: center;
       line-height: 1.4;
     }
+    .password-input-wrapper {
+      position: relative;
+      width: 100%;
+      display: flex;
+      align-items: center;
+    }
     .unlock-modal-input {
       background: rgba(0,0,0,0.04);
       border: 1px solid transparent;
-      padding: 12px 16px;
+      padding: 12px 40px 12px 16px;
       border-radius: 8px;
       font-family: 'Geist', sans-serif;
       font-size: 14px;
@@ -322,6 +346,27 @@ export const stickyNotesAppStyles = css`
     .unlock-modal-input:focus {
       background: rgba(0,0,0,0.06);
       border-color: rgba(0,0,0,0.2);
+    }
+    .toggle-password-btn {
+      position: absolute;
+      right: 8px;
+      background: transparent;
+      border: none;
+      color: rgba(0,0,0,0.5);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+      border-radius: 4px;
+      transition: color 0.2s;
+    }
+    .toggle-password-btn:hover {
+      color: rgba(0,0,0,0.8);
+    }
+    .toggle-password-btn span {
+      font-family: 'Material Symbols Outlined';
+      font-size: 20px;
     }
     .unlock-modal-input.error { border-color: #ba1a1a; background: rgba(186,26,26,0.05); }
     .unlock-error {
@@ -762,5 +807,194 @@ export const stickyNotesAppStyles = css`
         right: 24px;
         top: auto;
       }
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 20000;
+      animation: fadeIn 0.2s ease-out;
+    }
+    .view-note-paper {
+      width: 90vw;
+      max-width: 500px;
+      min-height: 500px;
+      max-height: 80vh;
+      border-radius: 2px 2px 28px 2px;
+      padding: 48px 40px 40px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      box-shadow: 
+        0 10px 30px rgba(0,0,0,0.2), 
+        0 20px 60px rgba(0,0,0,0.3),
+        inset -10px -10px 20px rgba(0,0,0,0.04);
+      background-image: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 60%, rgba(0,0,0,0.05) 100%);
+      animation: paperPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .view-note-paper::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(to top left, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0) 50%);
+      border-radius: 0 0 28px 0;
+      pointer-events: none;
+    }
+    @keyframes paperPop {
+      from { opacity: 0; transform: scale(0.8) translateY(40px) rotate(-5deg); }
+      to   { opacity: 1; transform: scale(1) translateY(0) rotate(var(--rot, 0deg)); }
+    }
+    .view-note-paper .tape {
+      position: absolute;
+      top: -15px;
+      left: 50%;
+      transform: translateX(-50%) rotate(-2deg);
+      width: 130px; 
+      height: 35px;
+      background: rgba(255, 255, 255, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      border-left: 2px dashed rgba(0, 0, 0, 0.05);
+      border-right: 2px dashed rgba(0, 0, 0, 0.05);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 10;
+    }
+    .view-close-icon {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: transparent;
+      border: none;
+      color: rgba(0,0,0,0.4);
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+    .view-close-icon:hover {
+      color: #ba1a1a;
+      background: rgba(0,0,0,0.05);
+      transform: rotate(90deg);
+    }
+    .view-close-icon span { font-size: 24px; }
+
+    .view-category-pill {
+      align-self: flex-start;
+      background: rgba(0,0,0,0.06);
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-family: 'Geist', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(0,0,0,0.6);
+      margin-bottom: 16px;
+    }
+
+    .view-paper-title {
+      font-family: 'Geist', sans-serif;
+      font-size: 28px;
+      font-weight: 800;
+      color: rgba(0,0,0,0.85);
+      margin: 0 0 24px 0;
+      line-height: 1.2;
+    }
+
+    .view-paper-content {
+      flex: 1;
+      overflow-y: auto;
+      font-family: 'Geist', sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      color: rgba(0,0,0,0.8);
+      padding-right: 8px;
+    }
+    
+    .view-paper-content::-webkit-scrollbar {
+      width: 6px;
+    }
+    .view-paper-content::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .view-paper-content::-webkit-scrollbar-thumb {
+      background: rgba(0,0,0,0.15);
+      border-radius: 3px;
+    }
+    .view-paper-content::-webkit-scrollbar-thumb:hover {
+      background: rgba(0,0,0,0.25);
+    }
+
+    .mode-toggle {
+      position: relative;
+      display: flex;
+      background: rgba(255,255,255,0.45);
+      border-radius: 12px;
+      padding: 4px;
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255,255,255,0.7);
+      box-shadow: inset 0 2px 4px rgba(255,255,255,0.5), 0 4px 12px rgba(0,0,0,0.05);
+      z-index: 1;
+      width: fit-content;
+    }
+    .mode-slider {
+      position: absolute;
+      top: 4px;
+      bottom: 4px;
+      width: calc(50% - 4px);
+      background: rgba(255,255,255,0.9);
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1), inset 0 2px 4px rgba(255,255,255,1);
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      z-index: -1;
+    }
+    .mode-slider.left { transform: translateX(0); }
+    .mode-slider.right { transform: translateX(100%); }
+
+    .mode-toggle button {
+      background: transparent !important;
+      box-shadow: none !important;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-family: 'Geist', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: rgba(0,0,0,0.5);
+      cursor: pointer;
+      transition: color 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      text-align: center;
+      flex: 1;
+    }
+    .mode-toggle button:hover {
+      color: rgba(0,0,0,0.8);
+    }
+    .mode-toggle button.active {
+      color: #1b1b24;
+    }
+
+    .view-checklist .checklist-item {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 12px;
+      font-size: 16px;
+    }
+    .view-checklist .checklist-item .done {
+      text-decoration: line-through;
+      opacity: 0.5;
+    }
+    .rich-text-content {
+      word-wrap: break-word;
     }
   `;
