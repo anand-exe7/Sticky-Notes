@@ -32,6 +32,9 @@ export class StickyNoteForm extends LitElement {
   @state() private isLocked = false;
   @state() private password = '';
   @state() private passwordError = '';
+  @state() private showPassword = false;
+  @state() private isChangingPassword = false;
+  @state() private previousPassword = '';
   
   @state() private isChecklist = false;
   @state() private checklistItems: { text: string; isDone: boolean }[] = [];
@@ -51,6 +54,15 @@ export class StickyNoteForm extends LitElement {
     }
   }
 
+  protected updated(changedProperties: Map<string | number | symbol, unknown>) {
+    super.updated(changedProperties);
+    if (changedProperties.has('isChecklist') && !this.isChecklist && this.contentDiv) {
+      if (this.contentDiv.innerHTML !== this.content) {
+        this.contentDiv.innerHTML = this.content;
+      }
+    }
+  }
+
   private updateFormatState() {
     this.activeFormats = {
       bold: document.queryCommandState('bold'),
@@ -60,15 +72,58 @@ export class StickyNoteForm extends LitElement {
     };
   }
 
+  private focusContentDiv() {
+    if (!this.contentDiv) return;
+    const activeEl = this.shadowRoot?.activeElement;
+    if (activeEl !== this.contentDiv) {
+      this.contentDiv.focus();
+      try {
+        if (typeof window.getSelection !== 'undefined' && typeof document.createRange !== 'undefined') {
+          const range = document.createRange();
+          range.selectNodeContents(this.contentDiv);
+          range.collapse(false);
+          const sel = window.getSelection();
+          if (sel) {
+            sel.removeAllRanges();
+            sel.addRange(range);
+          }
+        }
+      } catch (e) {
+        console.error('Error setting cursor', e);
+      }
+    }
+  }
+
   private format(command: string, e: Event, value?: string) {
     e.preventDefault();
+    this.focusContentDiv();
+
+    const sel = window.getSelection();
+    const savedRanges: Range[] = [];
+    if (sel) {
+      for (let i = 0; i < sel.rangeCount; i++) {
+        savedRanges.push(sel.getRangeAt(i).cloneRange());
+      }
+    }
+
     document.execCommand(command, false, value);
+
+    if (command === 'insertUnorderedList' && sel && savedRanges.length > 0) {
+      try {
+        sel.removeAllRanges();
+        savedRanges.forEach(r => sel.addRange(r));
+      } catch (err) {
+        console.warn('Could not restore selection perfectly after formatting.', err);
+      }
+    }
+
     this.content = this.contentDiv.innerHTML;
     this.updateFormatState();
   }
 
   private insertEmoji(emoji: string, e: Event) {
     e.preventDefault();
+    this.focusContentDiv();
     document.execCommand('insertText', false, emoji);
     this.showEmoji = false;
     this.content = this.contentDiv.innerHTML;
@@ -82,6 +137,12 @@ export class StickyNoteForm extends LitElement {
   private handleContentInput(e: Event) {
     this.content = (e.target as HTMLElement).innerHTML;
     this.contentError = '';
+  }
+
+  private handlePaste(e: ClipboardEvent) {
+    e.preventDefault();
+    const text = e.clipboardData?.getData('text/plain') || '';
+    document.execCommand('insertText', false, text);
   }
 
   static styles = stickyNoteFormStyles;
@@ -110,8 +171,14 @@ export class StickyNoteForm extends LitElement {
     if (e.key === 'Escape') this.cancel();
   };
 
-  private addChecklistItem() {
+  private async addChecklistItem() {
     this.checklistItems = [...this.checklistItems, { text: '', isDone: false }];
+    await this.updateComplete;
+    const inputs = this.shadowRoot?.querySelectorAll('.checklist-input');
+    if (inputs && inputs.length > 0) {
+      const lastInput = inputs[inputs.length - 1] as HTMLInputElement;
+      lastInput.focus();
+    }
   }
   private updateChecklistItem(index: number, text: string) {
     this.checklistItems[index].text = text;
@@ -132,9 +199,21 @@ export class StickyNoteForm extends LitElement {
     this.contentError = '';
     this.passwordError = '';
 
-    if (this.isLocked && !this.password.trim()) {
-      this.passwordError = 'Password required to lock.';
-      valid = false;
+    if (this.isLocked) {
+      if (this.note?.isLocked) {
+        if (this.isChangingPassword) {
+          if (this.previousPassword !== this.note.password) {
+            this.passwordError = 'Previous password incorrect.';
+            valid = false;
+          } else if (!this.password.trim()) {
+            this.passwordError = 'New password required.';
+            valid = false;
+          }
+        }
+      } else if (!this.password.trim()) {
+        this.passwordError = 'Password required to lock.';
+        valid = false;
+      }
     }
 
     if (!this.noteTitle.trim()) {
@@ -152,14 +231,17 @@ export class StickyNoteForm extends LitElement {
       }
     }
 
-    if (!this.isChecklist) {
-      if (!this.content.trim()) {
-        this.contentError = 'Content is required.';
-        valid = false;
-      } else if (this.content.length > 1000) {
-        this.contentError = 'Content cannot exceed 1000 characters.';
-        valid = false;
-      }
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = this.content;
+    const plainText = tempDiv.textContent || tempDiv.innerText || '';
+    const contentLen = plainText.trim().length;
+
+    if (contentLen > 1000) {
+      this.contentError = 'Content cannot exceed 1000 characters.';
+      valid = false;
+    } else if (!this.isChecklist && contentLen === 0) {
+      this.contentError = 'Content is required.';
+      valid = false;
     }
 
     return valid;
@@ -178,7 +260,7 @@ export class StickyNoteForm extends LitElement {
         isLocked: this.isLocked,
         password: this.password.trim(),
         isChecklist: this.isChecklist,
-        checklistItems: this.isChecklist ? this.checklistItems.filter(i => i.text.trim() !== '') : []
+        checklistItems: this.checklistItems.filter(i => i.text.trim() !== '')
       },
       bubbles: true,
       composed: true,
@@ -230,7 +312,7 @@ export class StickyNoteForm extends LitElement {
             </div>
           </div>
 
-          <form @submit=${this.submit} novalidate style="display:flex; flex-direction:column; flex:1;">
+          <form @submit=${this.submit} novalidate style="display:flex; flex-direction:column; flex:1; min-height: 0;">
 
             ${!this.isChecklist ? html`
               <div class="toolbar">
@@ -259,17 +341,17 @@ export class StickyNoteForm extends LitElement {
                     </button>
                   </div>
                 `)}
-                <button type="button" class="btn-add-item" @click=${this.addChecklistItem}>+ Add Item</button>
               </div>
+              <button type="button" class="btn-add-item" @click=${this.addChecklistItem}>+ Add Item</button>
             ` : html`
               <div class="rich-textarea-wrapper ${this.contentError ? 'error' : ''}">
-                <div id="note-content" class="rich-textarea" contenteditable="true" placeholder="Start writing here..." @input=${this.handleContentInput} @keyup=${this.updateFormatState} @mouseup=${this.updateFormatState}></div>
+                <div id="note-content" class="rich-textarea" contenteditable="true" spellcheck="false" placeholder="Start writing here..." @input=${this.handleContentInput} @paste=${this.handlePaste} @keyup=${this.updateFormatState} @mouseup=${this.updateFormatState}></div>
               </div>
               ${this.contentError ? html`<span class="error-msg" role="alert">${this.contentError}</span>` : ''}
               
               <div style="display:flex; justify-content:space-between; align-items:center;">
                 <span></span>
-                <span class="char-count ${contentLen > 900 ? 'warn' : ''}">${contentLen}/1000</span>
+                <span class="char-count ${contentLen >= 1000 ? 'warn' : ''}">${contentLen}/1000</span>
               </div>
             `}
 
@@ -283,11 +365,33 @@ export class StickyNoteForm extends LitElement {
 
                 <div class="lock-section">
                   ${this.isLocked ? html`
-                    <div class="password-input-wrapper">
-                      <input type="password" class="password-input ${this.passwordError ? 'error' : ''}" placeholder="Enter password" .value=${this.password} @input=${(e: Event) => { this.password = (e.target as HTMLInputElement).value; this.passwordError = ''; }} />
-                    </div>
+                    ${this.note?.isLocked ? html`
+                      ${!this.isChangingPassword ? html`
+                        <button type="button" @click=${() => this.isChangingPassword = true} style="font-family: 'Geist', sans-serif; font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: 6px; background: rgba(0,0,0,0.05); border: none; cursor: pointer; color: #1b1b24; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.1)'" onmouseout="this.style.background='rgba(0,0,0,0.05)'">Change Password</button>
+                      ` : html`
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                          <div class="password-input-wrapper">
+                            <input type="${this.showPassword ? 'text' : 'password'}" class="password-input ${this.passwordError === 'Previous password incorrect.' ? 'error' : ''}" placeholder="Previous password" .value=${this.previousPassword} @input=${(e: Event) => { this.previousPassword = (e.target as HTMLInputElement).value; this.passwordError = ''; }} />
+                            <button type="button" class="toggle-password-btn" @click=${() => this.showPassword = !this.showPassword} tabindex="-1">
+                              <span class="material-symbols-outlined">${this.showPassword ? 'visibility_off' : 'visibility'}</span>
+                            </button>
+                          </div>
+                          <div class="password-input-wrapper">
+                            <input type="${this.showPassword ? 'text' : 'password'}" class="password-input ${this.passwordError === 'New password required.' ? 'error' : ''}" placeholder="New password" .value=${this.password} @input=${(e: Event) => { this.password = (e.target as HTMLInputElement).value; this.passwordError = ''; }} />
+                          </div>
+                          ${this.passwordError ? html`<span class="error-msg" style="font-size: 11px; margin-top: 2px;">${this.passwordError}</span>` : ''}
+                        </div>
+                      `}
+                    ` : html`
+                      <div class="password-input-wrapper">
+                        <input type="${this.showPassword ? 'text' : 'password'}" class="password-input ${this.passwordError ? 'error' : ''}" placeholder="Enter password" .value=${this.password} @input=${(e: Event) => { this.password = (e.target as HTMLInputElement).value; this.passwordError = ''; }} />
+                        <button type="button" class="toggle-password-btn" @click=${() => this.showPassword = !this.showPassword} aria-label="Toggle password visibility" tabindex="-1">
+                          <span class="material-symbols-outlined">${this.showPassword ? 'visibility_off' : 'visibility'}</span>
+                        </button>
+                      </div>
+                    `}
                   ` : ''}
-                  <button type="button" class="lock-toggle ${this.isLocked ? 'locked' : ''}" @click=${() => { this.isLocked = !this.isLocked; if (!this.isLocked) { this.password = ''; this.passwordError = ''; } }} aria-label="Lock Note" title="Lock Note">
+                  <button type="button" class="lock-toggle ${this.isLocked ? 'locked' : ''}" @click=${() => { this.isLocked = !this.isLocked; if (!this.isLocked) { this.password = ''; this.previousPassword = ''; this.isChangingPassword = false; this.passwordError = ''; this.showPassword = false; } }} aria-label="Lock Note" title="Lock Note">
                     <span class="material-symbols-outlined">${this.isLocked ? 'lock' : 'lock_open'}</span>
                     <span>${this.isLocked ? 'Unlock Note' : 'Lock Note'}</span>
                   </button>

@@ -12,6 +12,8 @@ import { formatDate } from "../utils/format-date.js";
 export class StickyNoteCard extends LitElement {
   @property({ attribute: false }) note!: StickyNote;
 
+  @property({ type: Boolean }) isUnlocked = false;
+
   static styles = stickyNoteCardStyles;
 
   private get rotation(): number {
@@ -30,13 +32,35 @@ export class StickyNoteCard extends LitElement {
     );
   }
 
+  private requestUnlock(action: 'view' | 'edit' | 'delete') {
+    this.emit('note-unlock-request', { id: this.note.id, action });
+  }
+
+  private requestView() {
+    this.dispatchEvent(
+      new CustomEvent("note-view", {
+        detail: { id: this.note.id },
+        bubbles: true,
+        composed: true,
+      })
+    );
+  }
+
   private handleEdit(e: Event) {
     e.stopPropagation();
+    if (this.note.isLocked && !this.isUnlocked) {
+      this.requestUnlock('edit');
+      return;
+    }
     this.emit("note-edit", { id: this.note.id });
   }
 
   private handleDelete(e: Event) {
     e.stopPropagation();
+    if (this.note.isLocked && !this.isUnlocked) {
+      this.requestUnlock('delete');
+      return;
+    }
     this.emit("note-delete", { id: this.note.id });
   }
 
@@ -58,6 +82,17 @@ export class StickyNoteCard extends LitElement {
     }
   }
 
+  private handleCategoryClick(e: Event) {
+    e.stopPropagation();
+    if (this.note.category) {
+      this.dispatchEvent(new CustomEvent('category-filter', { 
+        detail: { category: this.note.category },
+        bubbles: true,
+        composed: true
+      }));
+    }
+  }
+
   render() {
     const bg = NOTE_COLOR_MAP[this.note.color];
     const rot = this.rotation;
@@ -75,9 +110,35 @@ export class StickyNoteCard extends LitElement {
           ? html`<div class="real-pin"></div>`
           : html`<div class="tape"></div>`
         }
-
+        ${this.note.category ? html`<div class="category-pill" @click=${this.handleCategoryClick} title="Filter by #${this.note.category}">#${this.note.category}</div>` : ''}
         <h3 class="title">${this.note.title}</h3>
-        <div class="content">${unsafeHTML(this.note.content)}</div>
+        
+        ${this.note.isLocked && !this.isUnlocked ? html`
+          <div class="content locked-content" @click=${() => this.requestUnlock('view')}>
+            <div class="locked-text">
+              ${this.note.content.replace(/<[^>]+>/g, '')}
+            </div>
+            <div class="lock-overlay">
+              <div class="animated-lock-container">
+                <svg class="animated-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path class="lock-shackle" d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+              </div>
+            </div>
+          </div>
+        ` : this.note.isChecklist ? html`
+          <div class="content checklist-content" @click=${() => this.requestView()}>
+            ${this.note.checklistItems?.map(item => html`
+              <div class="card-checklist-item ${item.isDone ? 'done' : ''}">
+                <span class="material-symbols-outlined">${item.isDone ? 'check_box' : 'check_box_outline_blank'}</span>
+                <span>${item.text}</span>
+              </div>
+            `)}
+          </div>
+        ` : html`
+          <div class="content" @click=${() => this.requestView()}>${unsafeHTML(this.note.content)}</div>
+        `}
 
         <div class="footer">
           <span class="date">${formatDate(this.note.updatedAt)}</span>

@@ -1,5 +1,6 @@
 import { stickyNotesAppStyles } from '../styles/sticky-notes-app.styles.js';
 import { LitElement, html } from 'lit';
+import { unsafeHTML } from "lit/directives/unsafe-html.js";
 import { customElement, state } from 'lit/decorators.js';
 import { type StickyNote, type SortOption, NOTE_COLOR_MAP } from '../models/sticky-note.js';
 import type { NoteFormData } from './sticky-note-form.js';
@@ -36,10 +37,13 @@ export class StickyNotesApp extends LitElement {
   
   @state() private selectedCategory: string | null = null;
   
-  @state() private unlockedNoteIds = new Set<string>();
   @state() private unlockTarget: { note: StickyNote, action: 'view' | 'edit' | 'delete' } | null = null;
   @state() private unlockPassword = '';
   @state() private unlockError = '';
+  @state() private showUnlockPassword = false;
+  
+  @state() private viewingNote: StickyNote | null = null;
+  @state() private viewingMode: 'note' | 'checklist' = 'note';
   
   private draggedNoteId: string | null = null;
   
@@ -109,6 +113,8 @@ export class StickyNotesApp extends LitElement {
       if (this.sidebarOpen) this.sidebarOpen = false;
       if (this.noteToDelete) this.noteToDelete = null;
       if (this.showForm) this.handleFormCancel();
+      if (this.viewingNote) this.viewingNote = null;
+      if (this.unlockTarget) this.cancelUnlock();
     }
   };
 
@@ -176,6 +182,27 @@ export class StickyNotesApp extends LitElement {
     }
   }
 
+  private handleNoteView(e: CustomEvent) {
+    const id = (e as CustomEvent<{ id: string }>).detail.id;
+    const note = this.notes.find(n => n.id === id);
+    if (note) {
+      this.viewingNote = note;
+      
+      const hasChecklist = note.checklistItems && note.checklistItems.length > 0;
+      const plainText = document.createElement('div');
+      plainText.innerHTML = note.content || '';
+      const hasContent = (plainText.textContent || plainText.innerText || '').trim().length > 0;
+      
+      if (hasChecklist && !hasContent) {
+        this.viewingMode = 'checklist';
+      } else if (hasContent && !hasChecklist) {
+        this.viewingMode = 'note';
+      } else {
+        this.viewingMode = note.isChecklist ? 'checklist' : 'note';
+      }
+    }
+  }
+
   private handleCategoryFilter(e: CustomEvent) {
     this.selectedCategory = (e as CustomEvent<{category: string}>).detail.category;
   }
@@ -204,14 +231,8 @@ export class StickyNotesApp extends LitElement {
       const unlockedNote = await api.unlockNote(this.unlockTarget.note.id, this.unlockPassword);
       const { action } = this.unlockTarget;
       
-      const newUnlocked = new Set(this.unlockedNoteIds);
-      newUnlocked.add(unlockedNote.id);
-      this.unlockedNoteIds = newUnlocked;
-      
-      // Update local note state with the decrypted content
       this.notes = this.notes.map(n => n.id === unlockedNote.id ? unlockedNote : n);
       
-      // Store the password temporarily on the unlocked note so the edit form can display it
       unlockedNote.password = this.unlockPassword;
       
       this.unlockTarget = null;
@@ -221,6 +242,21 @@ export class StickyNotesApp extends LitElement {
         this.showForm = true;
       } else if (action === 'delete') {
         this.noteToDelete = unlockedNote;
+      } else if (action === 'view') {
+        this.viewingNote = unlockedNote;
+        
+        const hasChecklist = unlockedNote.checklistItems && unlockedNote.checklistItems.length > 0;
+        const plainText = document.createElement('div');
+        plainText.innerHTML = unlockedNote.content || '';
+        const hasContent = (plainText.textContent || plainText.innerText || '').trim().length > 0;
+        
+        if (hasChecklist && !hasContent) {
+          this.viewingMode = 'checklist';
+        } else if (hasContent && !hasChecklist) {
+          this.viewingMode = 'note';
+        } else {
+          this.viewingMode = unlockedNote.isChecklist ? 'checklist' : 'note';
+        }
       }
     } catch (err: any) {
       this.unlockError = err.message || 'Incorrect password';
@@ -231,6 +267,7 @@ export class StickyNotesApp extends LitElement {
     this.unlockTarget = null;
     this.unlockPassword = '';
     this.unlockError = '';
+    this.showUnlockPassword = false;
   }
 
   private async confirmDelete() {
@@ -297,6 +334,13 @@ export class StickyNotesApp extends LitElement {
       } else {
         document.body.style.overflow = '';
       }
+    }
+
+    if (changedProperties.has('unlockTarget') && this.unlockTarget) {
+      setTimeout(() => {
+        const input = this.shadowRoot?.querySelector('.unlock-modal-input') as HTMLInputElement;
+        if (input) input.focus();
+      }, 50);
     }
   }
 
@@ -522,6 +566,7 @@ export class StickyNotesApp extends LitElement {
         class="board"
         @note-edit=${this.handleNoteEdit}
         @note-delete=${this.handleNoteDelete}
+        @note-view=${this.handleNoteView}
         @note-pin=${this.handleNotePin}
         @note-unlock-request=${this.handleUnlockRequest}
         @category-filter=${this.handleCategoryFilter}
@@ -600,7 +645,7 @@ export class StickyNotesApp extends LitElement {
         ` : html`
           <div class="notes-grid">
             ${notes.map(note => html`
-              <sticky-note-card .note=${note} .isUnlocked=${this.unlockedNoteIds.has(note.id)} draggable="true" @dragstart=${(e: DragEvent) => this.handleDragStart(e, note)} @dragover=${(e: DragEvent) => this.handleDragOver(e)} @drop=${(e: DragEvent) => this.handleDrop(e, note)}></sticky-note-card>
+              <sticky-note-card .note=${note} .isUnlocked=${false} draggable="true" @dragstart=${(e: DragEvent) => this.handleDragStart(e, note)} @dragover=${(e: DragEvent) => this.handleDragOver(e)} @drop=${(e: DragEvent) => this.handleDrop(e, note)}></sticky-note-card>
             `)}
           </div>
         `}
@@ -655,11 +700,65 @@ export class StickyNotesApp extends LitElement {
             </div>
             <h3>Unlock Note</h3>
             <p>Enter password to unlock "${this.unlockTarget.note.title}"</p>
-            <input type="password" class="unlock-modal-input ${this.unlockError ? 'error' : ''}" placeholder="Enter password" .value=${this.unlockPassword} @input=${(e: Event) => { this.unlockPassword = (e.target as HTMLInputElement).value; this.unlockError = ''; }} @keydown=${(e: KeyboardEvent) => this.handleUnlockKeydown(e)} autofocus />
+            <div class="password-input-wrapper">
+              <input type="${this.showUnlockPassword ? 'text' : 'password'}" class="unlock-modal-input ${this.unlockError ? 'error' : ''}" placeholder="Enter password" .value=${this.unlockPassword} @input=${(e: Event) => { this.unlockPassword = (e.target as HTMLInputElement).value; this.unlockError = ''; }} @keydown=${(e: KeyboardEvent) => this.handleUnlockKeydown(e)} autofocus />
+              <button type="button" class="toggle-password-btn" @click=${() => this.showUnlockPassword = !this.showUnlockPassword} aria-label="Toggle password visibility">
+                <span class="material-symbols-outlined">${this.showUnlockPassword ? 'visibility_off' : 'visibility'}</span>
+              </button>
+            </div>
             ${this.unlockError ? html`<span class="unlock-error">${this.unlockError}</span>` : ''}
             <div class="unlock-modal-actions">
               <button class="confirm-btn btn-cancel" @click=${this.cancelUnlock}>Cancel</button>
               <button class="confirm-btn btn-submit" @click=${() => this.verifyUnlockPassword()}>Unlock</button>
+            </div>
+          </div>
+        </div>
+      ` : ''}
+
+      ${this.viewingNote ? html`
+        <div class="overlay" @click=${() => this.viewingNote = null} role="dialog" aria-modal="true" aria-label="View note">
+          <div class="view-note-paper" @click=${(e: Event) => e.stopPropagation()} style="background-color: ${NOTE_COLOR_MAP[this.viewingNote.color]}; --rot: ${this.viewingNote.id.charCodeAt(0) % 2 === 0 ? '-2deg' : '2deg'};">
+            <div class="tape"></div>
+            
+            <button class="view-close-icon" @click=${() => this.viewingNote = null} aria-label="Close">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+
+            ${this.viewingNote.category ? html`<div class="view-category-pill">#${this.viewingNote.category}</div>` : ''}
+
+            <h2 class="view-paper-title">${this.viewingNote.title}</h2>
+            
+            ${(() => {
+              const hasChecklist = this.viewingNote.checklistItems && this.viewingNote.checklistItems.length > 0;
+              const plainText = document.createElement('div');
+              plainText.innerHTML = this.viewingNote.content || '';
+              const hasContent = (plainText.textContent || plainText.innerText || '').trim().length > 0;
+              
+              if (hasChecklist && hasContent) {
+                return html`
+                  <div class="mode-toggle" style="margin-bottom: 16px;">
+                    <div class="mode-slider ${this.viewingMode === 'checklist' ? 'right' : 'left'}"></div>
+                    <button class=${this.viewingMode === 'note' ? 'active' : ''} @click=${() => this.viewingMode = 'note'}>Note</button>
+                    <button class=${this.viewingMode === 'checklist' ? 'active' : ''} @click=${() => this.viewingMode = 'checklist'}>Checklist</button>
+                  </div>
+                `;
+              }
+              return '';
+            })()}
+            
+            <div class="view-paper-content">
+              ${this.viewingMode === 'checklist' ? html`
+                <div class="view-checklist">
+                  ${this.viewingNote.checklistItems?.map((item) => html`
+                    <div class="checklist-item">
+                      <span class="material-symbols-outlined" style="font-size: 20px; margin-right: 8px; color: rgba(0,0,0,0.5);">${item.isDone ? 'check_box' : 'check_box_outline_blank'}</span>
+                      <span class="${item.isDone ? 'done' : ''}">${item.text}</span>
+                    </div>
+                  `)}
+                </div>
+              ` : html`
+                <div class="rich-text-content">${unsafeHTML(this.viewingNote.content)}</div>
+              `}
             </div>
           </div>
         </div>
