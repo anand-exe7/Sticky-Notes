@@ -44,6 +44,7 @@ export class StickyNotesApp extends LitElement {
   
   @state() private viewingNote: StickyNote | null = null;
   @state() private viewingMode: 'note' | 'checklist' = 'note';
+  @state() private showAllCategories = false;
   
   private draggedNoteId: string | null = null;
   
@@ -59,8 +60,14 @@ export class StickyNotesApp extends LitElement {
     super.connectedCallback();
     window.addEventListener('keydown', this.handleGlobalKeyDown);
     window.addEventListener('scroll', this.handleScroll);
+    this.addEventListener('show-toast', this.handleShowToast as EventListener);
     await this.loadData();
   }
+
+  private handleShowToast = (e: CustomEvent) => {
+    const { message, type, action } = e.detail;
+    this.showToastMessage(message, type, action);
+  };
 
   private async loadData(showLoader = true) {
     if (showLoader) {
@@ -83,6 +90,7 @@ export class StickyNotesApp extends LitElement {
     super.disconnectedCallback();
     window.removeEventListener('keydown', this.handleGlobalKeyDown);
     window.removeEventListener('scroll', this.handleScroll);
+    this.removeEventListener('show-toast', this.handleShowToast as EventListener);
   }
 
   private handleScroll = () => {
@@ -435,7 +443,7 @@ export class StickyNotesApp extends LitElement {
 
   render() {
     const notes = this.filteredAndSorted;
-    const categories = Array.from(new Set(this.notes.map(n => n.category).filter(Boolean)));
+    const categories = Array.from(new Set(this.notes.map(n => n.category?.trim()).filter(Boolean))).sort((a, b) => a!.localeCompare(b!));
 
     return html`
       <div class="top-nav ${this.isScrolled ? 'scrolled' : ''}">
@@ -460,6 +468,14 @@ export class StickyNotesApp extends LitElement {
             @search-changed=${this.handleSearch}
           ></search-bar>
         </div>
+        ${categories.length > 0 ? html`
+          <div class="category-nav">
+            <button class="cat-pill ${!this.selectedCategory ? 'active' : ''}" @click=${() => this.selectedCategory = null}>All</button>
+            ${categories.map(cat => html`
+              <button class="cat-pill ${this.selectedCategory === cat ? 'active' : ''}" @click=${() => this.selectedCategory = cat}>#${cat}</button>
+            `)}
+          </div>
+        ` : ''}
       </div>
 
       <div class="sidebar-backdrop ${this.sidebarOpen ? 'open' : ''}" @click=${() => this.sidebarOpen = false}></div>
@@ -477,73 +493,82 @@ export class StickyNotesApp extends LitElement {
               <button class="cat-btn ${this.selectedCategory === null ? 'active' : ''}" @click=${() => this.selectedCategory = null}>
                 All Notes
               </button>
-              ${categories.map(cat => html`
+              ${categories.slice(0, this.showAllCategories ? categories.length : 3).map(cat => html`
                 <button class="cat-btn ${this.selectedCategory === cat ? 'active' : ''}" @click=${() => this.selectedCategory = cat}>
                   #${cat}
                 </button>
               `)}
+              ${categories.length > 3 ? html`
+                <button class="cat-btn view-all" @click=${() => this.showAllCategories = !this.showAllCategories}>
+                  ${this.showAllCategories ? 'View Less' : `View All (${categories.length - 3} more)`}
+                </button>
+              ` : ''}
             </div>
           </div>
-          <div class="sidebar-section">
-            <h3>Recently Deleted</h3>
-            ${this.deletedNotes.length > 0 ? html`
-              <div style="display:flex; flex-direction:column; gap:8px; max-height:200px; overflow-y:auto; padding-right:4px;">
-                ${this.deletedNotes.map(n => html`
-                  <div class="deleted-item">
-                    <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${n.title}</span>
-                    <div style="display: flex; gap: 8px;">
-                      <button @click=${() => this.restoreNote(n.id)} style="padding: 4px 8px; border-radius: 4px; border: 1px solid #d1d5db; background: #ffffff; color: #374151; cursor: pointer;">Restore</button>
-                      <button @click=${() => this.permanentDelete(n.id)} style="padding: 4px 8px; border-radius: 4px; border: 1px solid #fecaca; background: #fef2f2; color: #dc2626; cursor: pointer;">Delete</button>
-                    </div>
-                  </div>
-                `)}
-              </div>
-            ` : html`<p class="empty-text">No recently deleted notes</p>`}
-          </div>
-          <div style="margin-top: auto; display: flex; flex-direction: column; gap: 32px;">
+          ${!this.showAllCategories ? html`
             <div class="sidebar-section">
-              <h3>Board Stats</h3>
-            <div class="stat-row">
-              <span>Total Notes</span>
-              <strong>${this.notes.length}</strong>
+              <h3>Recently Deleted</h3>
+              ${this.deletedNotes.length > 0 ? html`
+                <div style="display:flex; flex-direction:column; gap:8px; max-height:200px; overflow-y:auto; padding-right:4px;">
+                  ${this.deletedNotes.map(n => html`
+                    <div class="deleted-item">
+                      <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${n.title}</span>
+                      <div style="display: flex; gap: 8px;">
+                        <button @click=${() => this.restoreNote(n.id)} style="padding: 4px 8px; border-radius: 4px; border: 1px solid #d1d5db; background: #ffffff; color: #374151; cursor: pointer;">Restore</button>
+                        <button @click=${() => this.permanentDelete(n.id)} style="padding: 4px 8px; border-radius: 4px; border: 1px solid #fecaca; background: #fef2f2; color: #dc2626; cursor: pointer;">Delete</button>
+                      </div>
+                    </div>
+                  `)}
+                </div>
+              ` : html`<p class="empty-text">No recently deleted notes</p>`}
             </div>
-            <div class="stat-row">
-              <span>Pinned Notes</span>
-              <strong>${this.notes.filter(n => n.pinned).length}</strong>
+            <div style="margin-top: auto; display: flex; flex-direction: column; gap: 32px;">
+              <div class="sidebar-section">
+                <h3>Board Stats</h3>
+              <div class="stat-row">
+                <span>Total Notes</span>
+                <strong>${this.notes.length}</strong>
+              </div>
+              <div class="stat-row">
+                <span>Pinned Notes</span>
+                <strong>${this.notes.filter(n => n.pinned).length}</strong>
+              </div>
             </div>
-          </div>
-          <div class="sidebar-section shortcuts">
-            <h3>Keyboard Shortcuts</h3>
-            <div class="shortcut-row">
-              <span>New Note</span>
-              <kbd>Alt + N</kbd>
+            <div class="sidebar-section shortcuts">
+              <h3>Keyboard Shortcuts</h3>
+              <div class="shortcut-row">
+                <span>New Note</span>
+                <kbd>Alt + N</kbd>
+              </div>
+              <div class="shortcut-row">
+                <span>Search</span>
+                <kbd>Ctrl + /</kbd>
+              </div>
+              <div class="shortcut-row">
+                <span>Undo Delete</span>
+                <kbd>Ctrl + Z</kbd>
+              </div>
+              <div class="shortcut-row">
+                <span>Focus Note</span>
+                <kbd>Tab</kbd>
+              </div>
+              <div class="shortcut-row">
+                <span>Edit Card</span>
+                <kbd>Enter</kbd>
+              </div>
+              <div class="shortcut-row">
+                <span>Delete Card</span>
+                <kbd>Del</kbd>
+              </div>
+              <div class="shortcut-row">
+                <span>Pin Card</span>
+                <kbd>Alt + P</kbd>
+              </div>
+              </div>
             </div>
-            <div class="shortcut-row">
-              <span>Search</span>
-              <kbd>Ctrl + /</kbd>
-            </div>
-            <div class="shortcut-row">
-              <span>Undo Delete</span>
-              <kbd>Ctrl + Z</kbd>
-            </div>
-            <div class="shortcut-row">
-              <span>Focus Note</span>
-              <kbd>Tab</kbd>
-            </div>
-            <div class="shortcut-row">
-              <span>Edit Card</span>
-              <kbd>Enter</kbd>
-            </div>
-            <div class="shortcut-row">
-              <span>Delete Card</span>
-              <kbd>Del</kbd>
-            </div>
-            <div class="shortcut-row">
-              <span>Pin Card</span>
-              <kbd>Alt + P</kbd>
-            </div>
-            </div>
-          </div>
+          ` : html`
+            <div style="flex: 1; min-height: 0;"></div>
+          `}
         </div>
       </aside>
 
@@ -698,7 +723,7 @@ export class StickyNotesApp extends LitElement {
                 <path class="lock-shackle" d="M7 11V7a5 5 0 0 1 10 0v4"></path>
               </svg>
             </div>
-            <h3>Unlock Note</h3>
+            <h3>Unlock Note <span style="font-size: 0.8rem; font-weight: normal; opacity: 0.8;">for ${this.unlockTarget.action === 'view' ? 'viewing' : this.unlockTarget.action}</span></h3>
             <p>Enter password to unlock "${this.unlockTarget.note.title}"</p>
             <div class="password-input-wrapper">
               <input type="${this.showUnlockPassword ? 'text' : 'password'}" class="unlock-modal-input ${this.unlockError ? 'error' : ''}" placeholder="Enter password" .value=${this.unlockPassword} @input=${(e: Event) => { this.unlockPassword = (e.target as HTMLInputElement).value; this.unlockError = ''; }} @keydown=${(e: KeyboardEvent) => this.handleUnlockKeydown(e)} autofocus />
@@ -736,7 +761,7 @@ export class StickyNotesApp extends LitElement {
               
               if (hasChecklist && hasContent) {
                 return html`
-                  <div class="mode-toggle" style="margin-bottom: 16px;">
+                  <div class="mode-toggle" style="margin: 0 auto 24px auto;">
                     <div class="mode-slider ${this.viewingMode === 'checklist' ? 'right' : 'left'}"></div>
                     <button class=${this.viewingMode === 'note' ? 'active' : ''} @click=${() => this.viewingMode = 'note'}>Note</button>
                     <button class=${this.viewingMode === 'checklist' ? 'active' : ''} @click=${() => this.viewingMode = 'checklist'}>Checklist</button>

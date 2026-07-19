@@ -169,7 +169,9 @@ export const stickyNoteCardStyles = css`
       margin-bottom: 8px;
       margin-top: 4px;
       padding-right: 20px;
-      word-break: break-word;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .content {
       font-family: "Geist", sans-serif;
@@ -228,6 +230,10 @@ export const stickyNoteCardStyles = css`
       word-break: break-word;
       white-space: pre-line;
       transition: filter 0.4s, opacity 0.4s;
+      mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%), linear-gradient(to right, transparent 0%, black 20%, black 80%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%), linear-gradient(to right, transparent 0%, black 20%, black 80%, transparent 100%);
+      mask-composite: intersect;
+      -webkit-mask-composite: source-in;
     }
     .locked-content:hover .locked-text {
       filter: blur(12px);
@@ -240,12 +246,23 @@ export const stickyNoteCardStyles = css`
       align-items: center;
       justify-content: center;
       z-index: 10;
+      transition: background 0.4s;
+    }
+    .lock-overlay::before {
+      content: '';
+      position: absolute;
+      inset: -10px;
       background: rgba(255,255,255,0.15);
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
+      mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%), linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%), linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%);
+      mask-composite: intersect;
+      -webkit-mask-composite: source-in;
+      z-index: -1;
       transition: background 0.4s;
     }
-    .locked-content:hover .lock-overlay {
+    .locked-content:hover .lock-overlay::before {
       background: rgba(255,255,255,0.05);
     }
     
@@ -272,6 +289,7 @@ export const stickyNoteCardStyles = css`
     .animated-lock {
       width: 24px;
       height: 24px;
+      overflow: visible;
     }
 
     .animated-lock .lock-shackle {

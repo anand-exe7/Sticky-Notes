@@ -33,6 +33,7 @@ export class StickyNoteForm extends LitElement {
   @state() private password = '';
   @state() private passwordError = '';
   @state() private showPassword = false;
+  @state() private showNewPassword = false;
   @state() private isChangingPassword = false;
   @state() private isUnlocking = false;
   @state() private hasExistingLock = false;
@@ -202,7 +203,10 @@ export class StickyNoteForm extends LitElement {
     this.contentError = '';
     this.passwordError = '';
 
-    if (this.isLocked) {
+    if (this.isUnlocking) {
+      this.passwordError = 'Please complete or cancel the lock removal first.';
+      valid = false;
+    } else if (this.isLocked) {
       if (this.note?.isLocked) {
         if (this.isChangingPassword) {
           if (this.previousPassword !== this.note.password) {
@@ -252,7 +256,16 @@ export class StickyNoteForm extends LitElement {
 
   private submit(e: Event) {
     e.preventDefault();
-    if (!this.validate()) return;
+    if (!this.validate()) {
+      if (this.titleError) {
+        this.dispatchEvent(new CustomEvent('show-toast', { detail: { message: this.titleError, type: 'error' }, bubbles: true, composed: true }));
+      } else if (this.passwordError) {
+        this.dispatchEvent(new CustomEvent('show-toast', { detail: { message: this.passwordError, type: 'error' }, bubbles: true, composed: true }));
+      } else if (this.contentError) {
+        this.dispatchEvent(new CustomEvent('show-toast', { detail: { message: this.contentError, type: 'error' }, bubbles: true, composed: true }));
+      }
+      return;
+    }
 
     this.dispatchEvent(new CustomEvent<NoteFormData>('note-submit', {
       detail: {
@@ -293,6 +306,7 @@ export class StickyNoteForm extends LitElement {
         this.isChangingPassword = false;
         this.passwordError = '';
         this.previousPassword = '';
+        this.password = this.note?.password || '';
       } else {
         this.isLocked = false;
         this.password = '';
@@ -309,6 +323,7 @@ export class StickyNoteForm extends LitElement {
   private confirmUnlock() {
     if (this.previousPassword !== this.note?.password) {
       this.passwordError = 'Incorrect password to unlock.';
+      this.dispatchEvent(new CustomEvent('show-toast', { detail: { message: this.passwordError, type: 'error' }, bubbles: true, composed: true }));
       return;
     }
     this.isLocked = false;
@@ -364,7 +379,6 @@ export class StickyNoteForm extends LitElement {
             ` : ''}
 
             <input id="note-title" type="text" class="${this.titleError ? 'error' : ''}" placeholder="Note Title" maxlength="100" .value=${this.noteTitle} @input=${this.handleTitleInput} autocomplete="off" autofocus />
-            ${this.titleError ? html`<span class="error-msg" role="alert">${this.titleError}</span>` : ''}
 
             ${this.isChecklist ? html`
               <div class="checklist-wrapper">
@@ -383,7 +397,6 @@ export class StickyNoteForm extends LitElement {
               <div class="rich-textarea-wrapper ${this.contentError ? 'error' : ''}">
                 <div id="note-content" class="rich-textarea" contenteditable="true" spellcheck="false" placeholder="Start writing here..." @input=${this.handleContentInput} @paste=${this.handlePaste} @keyup=${this.updateFormatState} @mouseup=${this.updateFormatState}></div>
               </div>
-              ${this.contentError ? html`<span class="error-msg" role="alert">${this.contentError}</span>` : ''}
               
               <div style="display:flex; justify-content:space-between; align-items:center;">
                 <span></span>
@@ -407,30 +420,32 @@ export class StickyNoteForm extends LitElement {
                         <span class="material-symbols-outlined">${this.showPassword ? 'visibility_off' : 'visibility'}</span>
                       </button>
                     </div>
-                    <button type="button" @click=${this.confirmUnlock} style="font-family: 'Geist', sans-serif; font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: 6px; background: #3525cd; border: none; cursor: pointer; color: #fff; transition: background 0.2s;">Unlock</button>
-                    ${this.passwordError ? html`<span class="error-msg" style="font-size: 11px; margin-top: 2px;">${this.passwordError}</span>` : ''}
+                    <button type="button" class="lock-action-btn primary" @click=${this.confirmUnlock}>Unlock</button>
                   ` : html`
                     ${this.isLocked ? html`
-                      <div style="display: flex; width: 100%; justify-content: space-between; align-items: flex-start; gap: 8px; flex-wrap: wrap;">
-                        <div style="display: flex; flex-direction: row; gap: 8px; flex-wrap: wrap; flex: 1;">
+                      <div style="display: flex; width: 100%; justify-content: space-between; align-items: stretch; gap: 8px; flex-wrap: wrap;">
+                        <div style="display: flex; flex-direction: row; gap: 8px; flex: 1; min-width: 0; align-items: stretch;">
                           ${this.hasExistingLock ? html`
                             ${!this.isChangingPassword ? html`
-                              <button type="button" @click=${() => this.isChangingPassword = true} style="font-family: 'Geist', sans-serif; font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: 6px; background: rgba(0,0,0,0.05); border: none; cursor: pointer; color: #1b1b24; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.1)'" onmouseout="this.style.background='rgba(0,0,0,0.05)'">Change Password</button>
+                              <button type="button" class="lock-action-btn secondary" @click=${() => { this.isChangingPassword = true; this.password = ''; }}>Change Password</button>
                             ` : html`
-                              <div class="password-input-wrapper">
-                                <input type="${this.showPassword ? 'text' : 'password'}" class="password-input ${this.passwordError === 'Previous password incorrect.' ? 'error' : ''}" placeholder="Old password" .value=${this.previousPassword} @input=${(e: Event) => { this.previousPassword = (e.target as HTMLInputElement).value; this.passwordError = ''; }} style="width: 130px;" />
+                              <div class="password-input-wrapper" style="flex: 1;">
+                                <input type="${this.showPassword ? 'text' : 'password'}" class="password-input ${this.passwordError === 'Previous password incorrect.' ? 'error' : ''}" placeholder="Old password" .value=${this.previousPassword} @input=${(e: Event) => { this.previousPassword = (e.target as HTMLInputElement).value; this.passwordError = ''; }} style="width: 100%; min-width: 0; box-sizing: border-box;" />
                                 <button type="button" class="toggle-password-btn" @click=${() => this.showPassword = !this.showPassword} tabindex="-1">
                                   <span class="material-symbols-outlined">${this.showPassword ? 'visibility_off' : 'visibility'}</span>
                                 </button>
                               </div>
-                              <div class="password-input-wrapper">
-                                <input type="${this.showPassword ? 'text' : 'password'}" class="password-input ${this.passwordError === 'New password required.' ? 'error' : ''}" placeholder="New password" .value=${this.password} @input=${(e: Event) => { this.password = (e.target as HTMLInputElement).value; this.passwordError = ''; }} style="width: 130px;" />
+                              <div class="password-input-wrapper" style="flex: 1;">
+                                <input type="${this.showNewPassword ? 'text' : 'password'}" class="password-input ${this.passwordError === 'New password required.' ? 'error' : ''}" placeholder="New password" .value=${this.password} @input=${(e: Event) => { this.password = (e.target as HTMLInputElement).value; this.passwordError = ''; }} style="width: 100%; min-width: 0; box-sizing: border-box;" />
+                                <button type="button" class="toggle-password-btn" @click=${() => this.showNewPassword = !this.showNewPassword} tabindex="-1">
+                                  <span class="material-symbols-outlined">${this.showNewPassword ? 'visibility_off' : 'visibility'}</span>
+                                </button>
                               </div>
-                              ${this.passwordError ? html`<span class="error-msg" style="font-size: 11px; margin-top: 2px; width: 100%;">${this.passwordError}</span>` : ''}
+                              <button type="button" class="lock-action-btn secondary" @click=${() => { this.isChangingPassword = false; this.password = this.note?.password || ''; this.previousPassword = ''; this.passwordError = ''; }}>Cancel</button>
                             `}
                           ` : html`
-                            <div class="password-input-wrapper">
-                              <input type="${this.showPassword ? 'text' : 'password'}" class="password-input ${this.passwordError ? 'error' : ''}" placeholder="Enter password" .value=${this.password} @input=${(e: Event) => { this.password = (e.target as HTMLInputElement).value; this.passwordError = ''; }} />
+                            <div class="password-input-wrapper" style="flex: 1;">
+                              <input type="${this.showPassword ? 'text' : 'password'}" class="password-input ${this.passwordError ? 'error' : ''}" placeholder="Enter password" .value=${this.password} @input=${(e: Event) => { this.password = (e.target as HTMLInputElement).value; this.passwordError = ''; }} style="width: 100%; min-width: 0; box-sizing: border-box;" />
                               <button type="button" class="toggle-password-btn" @click=${() => this.showPassword = !this.showPassword} aria-label="Toggle password visibility" tabindex="-1">
                                 <span class="material-symbols-outlined">${this.showPassword ? 'visibility_off' : 'visibility'}</span>
                               </button>
@@ -438,8 +453,8 @@ export class StickyNoteForm extends LitElement {
                           `}
                         </div>
                         
-                        <button type="button" @click=${this.handleLockToggle} style="font-family: 'Geist', sans-serif; font-size: 12px; font-weight: 600; padding: 6px 10px; border-radius: 6px; background: rgba(186,26,26,0.1); border: none; cursor: pointer; color: #ba1a1a; transition: background 0.2s; display: flex; align-items: center; gap: 4px; white-space: nowrap;" onmouseover="this.style.background='rgba(186,26,26,0.2)'" onmouseout="this.style.background='rgba(186,26,26,0.1)'">
-                          <span class="material-symbols-outlined" style="font-size: 16px;">${this.hasExistingLock ? 'lock_open' : 'close'}</span>
+                        <button type="button" class="lock-action-btn danger" @click=${this.handleLockToggle}>
+                          <span class="material-symbols-outlined" style="font-size: 18px;">${this.hasExistingLock ? 'lock_open' : 'close'}</span>
                           ${this.hasExistingLock ? 'Remove Lock' : 'Cancel Lock'}
                         </button>
                       </div>
