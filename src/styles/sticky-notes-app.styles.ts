@@ -1116,6 +1116,14 @@ export const stickyNotesAppStyles = css`
       color: #1b1b24;
     }
 
+    @keyframes fadeContentIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .view-checklist {
+      animation: fadeContentIn 0.3s ease-out forwards;
+    }
     .view-checklist .checklist-item {
       display: flex;
       align-items: flex-start;
@@ -1128,6 +1136,7 @@ export const stickyNotesAppStyles = css`
     }
     .rich-text-content {
       word-wrap: break-word;
+      animation: fadeContentIn 0.3s ease-out forwards;
     }
 
     @media (max-width: 500px) {

@@ -128,7 +128,6 @@ export class StickyNoteForm extends LitElement {
     e.preventDefault();
     this.focusContentDiv();
     document.execCommand('insertText', false, emoji);
-    this.showEmoji = false;
     this.content = this.contentDiv.innerHTML;
   }
 
@@ -365,17 +364,26 @@ export class StickyNoteForm extends LitElement {
             </div>
           </div>
 
-          <form @submit=${this.submit} novalidate style="display:flex; flex-direction:column; flex:1; min-height: 0;">
+          <form @submit=${this.submit} novalidate style="display:flex; flex-direction:column; flex:1; min-height: 0; position: relative;">
 
             ${!this.isChecklist ? html`
               <div class="toolbar">
-                <button type="button" class="${this.activeFormats.bold ? 'active' : ''}" @mousedown=${(e:Event) => this.format('bold', e)} aria-label="Bold"><span class="material-symbols-outlined">format_bold</span></button>
-                <button type="button" class="${this.activeFormats.italic ? 'active' : ''}" @mousedown=${(e:Event) => this.format('italic', e)} aria-label="Italic"><span class="material-symbols-outlined">format_italic</span></button>
-                <button type="button" class="${this.activeFormats.underline ? 'active' : ''}" @mousedown=${(e:Event) => this.format('underline', e)} aria-label="Underline"><span class="material-symbols-outlined">format_underlined</span></button>
-                <button type="button" class="${this.activeFormats.insertUnorderedList ? 'active' : ''}" @mousedown=${(e:Event) => this.format('insertUnorderedList', e)} aria-label="Bullet List"><span class="material-symbols-outlined">format_list_bulleted</span></button>
+                <button type="button" class="${this.activeFormats.bold ? 'active' : ''}" @pointerdown=${(e:Event) => this.format('bold', e)} aria-label="Bold"><span class="material-symbols-outlined">format_bold</span></button>
+                <button type="button" class="${this.activeFormats.italic ? 'active' : ''}" @pointerdown=${(e:Event) => this.format('italic', e)} aria-label="Italic"><span class="material-symbols-outlined">format_italic</span></button>
+                <button type="button" class="${this.activeFormats.underline ? 'active' : ''}" @pointerdown=${(e:Event) => this.format('underline', e)} aria-label="Underline"><span class="material-symbols-outlined">format_underlined</span></button>
+                <button type="button" class="${this.activeFormats.insertUnorderedList ? 'active' : ''}" @pointerdown=${(e:Event) => this.format('insertUnorderedList', e)} aria-label="Bullet List"><span class="material-symbols-outlined">format_list_bulleted</span></button>
                 <div class="emoji-wrapper">
-                  <button type="button" class="${this.showEmoji ? 'active' : ''}" @click=${() => this.showEmoji = !this.showEmoji} aria-label="Emoji"><span class="material-symbols-outlined">add_reaction</span></button>
-                  ${this.showEmoji ? html`<div class="emoji-picker">${EMOJIS.map(em => html`<span @mousedown=${(e:Event) => this.insertEmoji(em, e)}>${em}</span>`)}</div>` : ''}
+                  <button type="button" class="emoji-btn ${this.showEmoji ? 'active' : ''}" @click=${() => this.showEmoji = !this.showEmoji} aria-label="Emoji">
+                    <span class="material-symbols-outlined">add_reaction</span>
+                  </button>
+                  ${this.showEmoji ? html`
+                    <div class="emoji-picker">
+                      <button type="button" class="emoji-picker-close" @click=${() => this.showEmoji = false}>
+                        <span class="material-symbols-outlined" style="font-size: 16px;">close</span>
+                      </button>
+                      ${EMOJIS.map(em => html`<span @pointerdown=${(e:Event) => this.insertEmoji(em, e)}>${em}</span>`)}
+                    </div>
+                  ` : ''}
                 </div>
               </div>
             ` : ''}

@@ -131,6 +131,8 @@ export const stickyNoteFormStyles = css`
     }
 
     .toolbar {
+      position: relative;
+      z-index: 50;
       display: flex;
       gap: 6px;
       margin-bottom: 16px;
@@ -174,27 +176,61 @@ export const stickyNoteFormStyles = css`
       pointer-events: none; /* Prevents click issues */
     }
     
-    .emoji-wrapper { position: relative; }
+    .emoji-wrapper { margin-left: auto; }
+    
+    .toolbar .emoji-btn {
+      background: rgba(53, 37, 205, 0.08);
+      color: #3525cd;
+      border: 1px solid rgba(53, 37, 205, 0.15);
+      margin-left: 8px;
+    }
+    .toolbar .emoji-btn:hover {
+      background: rgba(53, 37, 205, 0.15);
+    }
+    .toolbar .emoji-btn.active {
+      background: #3525cd;
+      color: #ffffff;
+    }
+
     .emoji-picker {
       position: absolute;
-      top: calc(100% + 8px);
+      top: 50px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(255, 255, 255, 0.85);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border-radius: 16px;
+      background: #f8f9fa !important; /* solid light gray */
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      opacity: 1 !important;
+      border-radius: 12px;
       padding: 12px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+      padding-top: 28px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.25);
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(32px, 1fr));
       gap: 6px;
       z-index: 300;
-      width: calc(100vw - 48px);
-      max-width: 260px;
+      width: 260px;
+      max-width: calc(100vw - 80px);
       max-height: 200px;
       overflow-y: auto;
-      border: 1px solid rgba(255,255,255,0.6);
+      border: 1px solid rgba(0,0,0,0.1);
+      animation: fadeContentIn 0.2s ease-out forwards;
+    }
+    .emoji-picker-close {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: rgba(0,0,0,0.4);
+      padding: 4px;
+      border-radius: 50%;
+      display: flex;
+    }
+    .emoji-picker-close:hover {
+      background: rgba(0,0,0,0.05);
+      color: #1b1b24;
     }
     .emoji-picker span {
       cursor: pointer;
@@ -210,7 +246,7 @@ export const stickyNoteFormStyles = css`
     #note-title {
       background: rgba(0,0,0,0.03);
       border: none;
-      padding: 8px 12px;
+      padding: 14px 12px 8px 12px;
       border-radius: 8px;
       font-family: 'Geist', sans-serif;
       font-size: 26px;
@@ -262,6 +298,7 @@ export const stickyNoteFormStyles = css`
     .category-input::placeholder { color: rgba(0,0,0,0.3); text-transform: none; }
 
     .rich-textarea-wrapper {
+      animation: fadeContentIn 0.3s ease-out forwards;
       display: flex;
       flex-direction: column;
       flex-grow: 1;
@@ -379,7 +416,13 @@ export const stickyNoteFormStyles = css`
         font-size: 15px;
       }
     }
+    @keyframes fadeContentIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
     .checklist-wrapper {
+      animation: fadeContentIn 0.3s ease-out forwards;
       display: flex;
       flex-direction: column;
       gap: 8px;

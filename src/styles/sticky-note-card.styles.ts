@@ -164,14 +164,13 @@ export const stickyNoteCardStyles = css`
       font-family: "Geist", sans-serif;
       font-size: 18px;
       font-weight: 600;
-      line-height: 1.3;
+      line-height: 1.4;
       color: #1b1b24;
       margin-bottom: 8px;
-      margin-top: 4px;
-      padding-right: 20px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      margin-top: 0px;
+      padding-top: 4px;
+      padding-right: 12px;
+      word-break: break-word;
     }
     .content {
       font-family: "Geist", sans-serif;
