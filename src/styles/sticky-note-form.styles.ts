@@ -420,6 +420,7 @@ export const stickyNoteFormStyles = css`
     }
     .checklist-input {
       flex: 1;
+      min-width: 0;
       background: transparent;
       border: none;
       outline: none;
@@ -661,47 +662,52 @@ export const stickyNoteFormStyles = css`
 
     @media (max-width: 500px) {
       .modal {
-        height: 85vh;
-        max-height: 580px;
-        padding: 24px 16px 20px;
+        height: 95vh;
+        max-height: 850px;
+        padding: 16px 12px 12px;
         max-width: 95%;
-        border-radius: 4px 4px 20px 4px;
+        border-radius: 4px 4px 16px 4px;
       }
       .modal-header {
-        margin-bottom: 16px;
+        margin-bottom: 8px;
+        gap: 8px;
       }
       .category-input {
         max-width: none;
-        margin-right: 8px;
+        margin-right: 0;
         font-size: 12px;
+        padding: 6px 12px;
       }
       .mode-toggle {
         width: 100%;
-        padding: 4px;
+        padding: 2px;
+        margin-bottom: 8px;
       }
       .mode-toggle button {
-        padding: 10px 8px;
+        padding: 6px 4px;
         font-size: 13px;
-        white-space: nowrap;
       }
       .toolbar {
         flex-wrap: wrap;
-        padding: 4px 6px;
+        padding: 2px 4px;
+        gap: 2px;
+        margin-bottom: 4px;
       }
       .toolbar button {
         padding: 4px;
       }
       .toolbar .material-symbols-outlined {
-        font-size: 20px;
+        font-size: 18px;
       }
       .emoji-picker {
         left: auto;
-        right: -10px;
-        transform: none;
+        right: 0;
+        top: calc(100% + 4px);
       }
       #note-title {
-        font-size: 20px;
-        padding: 6px 8px;
+        font-size: 18px;
+        padding: 4px 8px;
+        margin-bottom: 4px;
       }
       .rich-textarea {
         font-size: 14px;
@@ -710,30 +716,44 @@ export const stickyNoteFormStyles = css`
       .footer-section {
         flex-direction: column;
         align-items: stretch;
+        gap: 12px;
+        padding-top: 12px;
       }
       .footer-top {
         flex-direction: column;
         align-items: stretch;
+        gap: 12px;
       }
       .color-row {
-        justify-content: space-between;
+        justify-content: space-around;
+      }
+      .color-btn {
+        width: 28px;
+        height: 28px;
       }
       .lock-section {
         flex-direction: column;
         align-items: stretch;
+        gap: 8px;
       }
       .lock-toggle {
         width: 100%;
-        padding: 10px;
+        padding: 8px;
+        font-size: 13px;
       }
       .password-input-wrapper, .password-input {
         width: 100%;
       }
+      .password-input {
+        padding: 8px 32px 8px 12px;
+      }
       .actions {
         width: 100%;
+        gap: 8px;
       }
       .btn-save, .btn-cancel {
-        padding: 12px 16px;
+        padding: 10px 12px;
+        font-size: 14px;
       }
     }
   `;

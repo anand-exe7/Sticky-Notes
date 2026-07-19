@@ -215,7 +215,6 @@ export const stickyNoteCardStyles = css`
     .locked-content {
       position: relative;
       flex: 1;
-      overflow: hidden;
       cursor: pointer;
     }
     .locked-text {
