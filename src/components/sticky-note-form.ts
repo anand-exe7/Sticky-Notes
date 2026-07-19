@@ -231,7 +231,9 @@ export class StickyNoteForm extends LitElement {
       valid = false;
     } else {
       const normalizedTitle = this.noteTitle.trim().toLowerCase();
-      const otherTitles = this.existingTitles.filter(t => !this.note || t !== this.note.title.toLowerCase());
+      const otherTitles = this.existingTitles
+        .filter(t => !this.note || t.toLowerCase() !== this.note.title.toLowerCase())
+        .map(t => t.toLowerCase());
       if (otherTitles.includes(normalizedTitle)) {
         this.titleError = 'Title must be unique. This title already exists.';
         valid = false;
@@ -415,16 +417,17 @@ export class StickyNoteForm extends LitElement {
                 <div class="lock-section">
                   ${this.isUnlocking ? html`
                     <div class="password-input-wrapper">
-                      <input type="${this.showPassword ? 'text' : 'password'}" class="password-input ${this.passwordError ? 'error' : ''}" placeholder="Enter password to unlock" .value=${this.previousPassword} @input=${(e: Event) => { this.previousPassword = (e.target as HTMLInputElement).value; this.passwordError = ''; }} />
+                      <input type="${this.showPassword ? 'text' : 'password'}" class="password-input ${this.passwordError ? 'error' : ''}" placeholder="Enter password to unlock" .value=${this.previousPassword} @input=${(e: Event) => { this.previousPassword = (e.target as HTMLInputElement).value; this.passwordError = ''; }} style="box-sizing: border-box; width: 100%; min-width: 0;" />
                       <button type="button" class="toggle-password-btn" @click=${() => this.showPassword = !this.showPassword} tabindex="-1">
                         <span class="material-symbols-outlined">${this.showPassword ? 'visibility_off' : 'visibility'}</span>
                       </button>
                     </div>
                     <button type="button" class="lock-action-btn primary" @click=${this.confirmUnlock}>Unlock</button>
+                    <button type="button" class="lock-action-btn secondary" @click=${() => { this.isUnlocking = false; this.previousPassword = ''; this.passwordError = ''; }}>Cancel</button>
                   ` : html`
                     ${this.isLocked ? html`
-                      <div style="display: flex; width: 100%; justify-content: space-between; align-items: stretch; gap: 8px; flex-wrap: wrap;">
-                        <div style="display: flex; flex-direction: row; gap: 8px; flex: 1; min-width: 0; align-items: stretch;">
+                      <div class="lock-actions-container">
+                        <div class="lock-actions-inner">
                           ${this.hasExistingLock ? html`
                             ${!this.isChangingPassword ? html`
                               <button type="button" class="lock-action-btn secondary" @click=${() => { this.isChangingPassword = true; this.password = ''; }}>Change Password</button>
@@ -453,10 +456,12 @@ export class StickyNoteForm extends LitElement {
                           `}
                         </div>
                         
-                        <button type="button" class="lock-action-btn danger" @click=${this.handleLockToggle}>
-                          <span class="material-symbols-outlined" style="font-size: 18px;">${this.hasExistingLock ? 'lock_open' : 'close'}</span>
-                          ${this.hasExistingLock ? 'Remove Lock' : 'Cancel Lock'}
-                        </button>
+                        ${!this.isChangingPassword ? html`
+                          <button type="button" class="lock-action-btn danger" @click=${this.handleLockToggle}>
+                            <span class="material-symbols-outlined" style="font-size: 18px;">${this.hasExistingLock ? 'lock_open' : 'close'}</span>
+                            ${this.hasExistingLock ? 'Remove Lock' : 'Cancel Lock'}
+                          </button>
+                        ` : ''}
                       </div>
                     ` : ''}
                     

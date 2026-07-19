@@ -13,6 +13,7 @@ export class StickyNoteCard extends LitElement {
   @property({ attribute: false }) note!: StickyNote;
 
   @property({ type: Boolean }) isUnlocked = false;
+  @property({ type: Boolean }) isDeleted = false;
 
   static styles = stickyNoteCardStyles;
 
@@ -147,35 +148,29 @@ export class StickyNoteCard extends LitElement {
             role="group"
             aria-label="Note actions"
           >
-            <button
-              class="action-btn pin"
-              @click=${this.handlePin}
-              aria-label="${this.note.pinned ? "Unpin note" : "Pin note"}"
-              title="${this.note.pinned ? "Unpin" : "Pin"}"
-            >
-              <span
-                style="font-variation-settings: 'FILL' ${this.note.pinned
-                  ? 1
-                  : 0}"
-                >push_pin</span
+            ${this.isDeleted ? html`
+              <button class="action-btn edit" @click=${(e: Event) => { e.stopPropagation(); this.emit('note-restore', { id: this.note.id }); }} aria-label="Restore" title="Restore">
+                <span class="material-symbols-outlined">restore_from_trash</span>
+              </button>
+              <button class="action-btn delete" @click=${(e: Event) => { e.stopPropagation(); this.emit('note-permanent-delete', { id: this.note.id }); }} aria-label="Permanent Delete" title="Permanent Delete">
+                <span class="material-symbols-outlined">delete_forever</span>
+              </button>
+            ` : html`
+              <button
+                class="action-btn pin"
+                @click=${this.handlePin}
+                aria-label="${this.note.pinned ? "Unpin note" : "Pin note"}"
+                title="${this.note.pinned ? "Unpin" : "Pin"}"
               >
-            </button>
-            <button
-              class="action-btn edit"
-              @click=${this.handleEdit}
-              aria-label="Edit note"
-              title="Edit"
-            >
-              <span>edit</span>
-            </button>
-            <button
-              class="action-btn delete"
-              @click=${this.handleDelete}
-              aria-label="Delete note"
-              title="Delete"
-            >
-              <span>delete</span>
-            </button>
+                <span style="font-variation-settings: 'FILL' ${this.note.pinned ? 1 : 0}">push_pin</span>
+              </button>
+              <button class="action-btn edit" @click=${this.handleEdit} aria-label="Edit note" title="Edit">
+                <span class="material-symbols-outlined">edit</span>
+              </button>
+              <button class="action-btn delete" @click=${this.handleDelete} aria-label="Delete note" title="Delete">
+                <span class="material-symbols-outlined">delete</span>
+              </button>
+            `}
           </div>
         </div>
       </div>

@@ -45,6 +45,7 @@ export class StickyNotesApp extends LitElement {
   @state() private viewingNote: StickyNote | null = null;
   @state() private viewingMode: 'note' | 'checklist' = 'note';
   @state() private showAllCategories = false;
+  @state() private viewingTrash = false;
   
   private draggedNoteId: string | null = null;
   
@@ -61,8 +62,20 @@ export class StickyNotesApp extends LitElement {
     window.addEventListener('keydown', this.handleGlobalKeyDown);
     window.addEventListener('scroll', this.handleScroll);
     this.addEventListener('show-toast', this.handleShowToast as EventListener);
+    this.addEventListener('note-restore', this.handleNoteRestore as unknown as EventListener);
+    this.addEventListener('note-permanent-delete', this.handleNotePermanentDelete as unknown as EventListener);
     await this.loadData();
   }
+
+  private handleNoteRestore = async (e: CustomEvent) => {
+    const { id } = e.detail;
+    await this.restoreNote(id);
+  };
+
+  private handleNotePermanentDelete = async (e: CustomEvent) => {
+    const { id } = e.detail;
+    await this.permanentDelete(id);
+  };
 
   private handleShowToast = (e: CustomEvent) => {
     const { message, type, action } = e.detail;
@@ -468,7 +481,14 @@ export class StickyNotesApp extends LitElement {
             @search-changed=${this.handleSearch}
           ></search-bar>
         </div>
-        ${categories.length > 0 ? html`
+        ${this.viewingTrash ? html`
+          <div class="category-nav">
+            <button class="cat-pill active" @click=${() => this.viewingTrash = false}>
+              <span class="material-symbols-outlined" style="font-size: 16px; margin-right: 4px; vertical-align: middle;">arrow_back</span>
+              Go to All Notes
+            </button>
+          </div>
+        ` : categories.length > 0 ? html`
           <div class="category-nav">
             <button class="cat-pill ${!this.selectedCategory ? 'active' : ''}" @click=${() => this.selectedCategory = null}>All</button>
             ${categories.map(cat => html`
@@ -487,41 +507,46 @@ export class StickyNotesApp extends LitElement {
           </button>
         </div>
         <div class="sidebar-content">
-          <div class="sidebar-section">
-            <h3>Categories</h3>
-            <div class="category-list">
-              <button class="cat-btn ${this.selectedCategory === null ? 'active' : ''}" @click=${() => this.selectedCategory = null}>
-                All Notes
+          ${this.viewingTrash ? html`
+            <div class="sidebar-section">
+              <button class="cat-btn" @click=${() => { this.viewingTrash = false; this.selectedCategory = null; if (window.innerWidth <= 768) this.sidebarOpen = false; }}>
+                <span class="material-symbols-outlined" style="font-size: 16px; margin-right: 8px;">arrow_back</span>
+                Go to All Notes
               </button>
-              ${categories.slice(0, this.showAllCategories ? categories.length : 3).map(cat => html`
-                <button class="cat-btn ${this.selectedCategory === cat ? 'active' : ''}" @click=${() => this.selectedCategory = cat}>
-                  #${cat}
-                </button>
-              `)}
-              ${categories.length > 3 ? html`
-                <button class="cat-btn view-all" @click=${() => this.showAllCategories = !this.showAllCategories}>
-                  ${this.showAllCategories ? 'View Less' : `View All (${categories.length - 3} more)`}
-                </button>
-              ` : ''}
             </div>
-          </div>
+          ` : ''}
+          ${!this.viewingTrash ? html`
+            <div class="sidebar-section" style="${this.showAllCategories ? 'flex: 1; display: flex; flex-direction: column; min-height: 0;' : ''}">
+              <h3>Categories</h3>
+              <div class="category-list" style="${this.showAllCategories ? 'flex: 1; overflow-y: auto; padding-right: 4px;' : ''}">
+                <button class="cat-btn ${this.selectedCategory === null ? 'active' : ''}" @click=${() => this.selectedCategory = null}>
+                  All Notes
+                </button>
+                ${categories.slice(0, this.showAllCategories ? categories.length : 3).map(cat => html`
+                  <button class="cat-btn ${this.selectedCategory === cat ? 'active' : ''}" @click=${() => this.selectedCategory = cat}>
+                    #${cat}
+                  </button>
+                `)}
+                ${categories.length > 3 ? html`
+                  <button class="cat-btn view-all" @click=${() => this.showAllCategories = !this.showAllCategories}>
+                    ${this.showAllCategories ? 'View Less' : `View All (${categories.length - 3} more)`}
+                  </button>
+                ` : ''}
+              </div>
+            </div>
+          ` : ''}
+
           ${!this.showAllCategories ? html`
             <div class="sidebar-section">
               <h3>Recently Deleted</h3>
-              ${this.deletedNotes.length > 0 ? html`
-                <div style="display:flex; flex-direction:column; gap:8px; max-height:200px; overflow-y:auto; padding-right:4px;">
-                  ${this.deletedNotes.map(n => html`
-                    <div class="deleted-item">
-                      <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${n.title}</span>
-                      <div style="display: flex; gap: 8px;">
-                        <button @click=${() => this.restoreNote(n.id)} style="padding: 4px 8px; border-radius: 4px; border: 1px solid #d1d5db; background: #ffffff; color: #374151; cursor: pointer;">Restore</button>
-                        <button @click=${() => this.permanentDelete(n.id)} style="padding: 4px 8px; border-radius: 4px; border: 1px solid #fecaca; background: #fef2f2; color: #dc2626; cursor: pointer;">Delete</button>
-                      </div>
-                    </div>
-                  `)}
-                </div>
-              ` : html`<p class="empty-text">No recently deleted notes</p>`}
+              <button class="cat-btn ${this.viewingTrash ? 'active' : ''}" @click=${() => { this.viewingTrash = !this.viewingTrash; this.selectedCategory = null; if (this.viewingTrash && window.innerWidth <= 768) this.sidebarOpen = false; }}>
+                <span class="material-symbols-outlined" style="font-size: 16px; margin-right: 8px;">delete</span>
+                Trash (${this.deletedNotes.length})
+              </button>
             </div>
+          ` : ''}
+
+          ${(!this.showAllCategories && !this.viewingTrash) ? html`
             <div style="margin-top: auto; display: flex; flex-direction: column; gap: 32px;">
               <div class="sidebar-section">
                 <h3>Board Stats</h3>
@@ -572,19 +597,20 @@ export class StickyNotesApp extends LitElement {
         </div>
       </aside>
 
-     
-      <div class="floating-add">
-        <div class="add-btn-wrapper">
-          <button
-            class="add-btn"
-            @click=${this.handleAddNew}
-            aria-label="Add new note"
-          >
-            <span class="material-symbols-outlined">add</span>
-          </button>
-          <span class="add-tooltip">New Note</span>
+      ${!this.viewingTrash ? html`
+        <div class="floating-add">
+          <div class="add-btn-wrapper">
+            <button
+              class="add-btn"
+              @click=${this.handleAddNew}
+              aria-label="Add new note"
+            >
+              <span class="material-symbols-outlined">add</span>
+            </button>
+            <span class="add-tooltip">New Note</span>
+          </div>
         </div>
-      </div>
+      ` : ''}
 
      
       <main
@@ -654,6 +680,26 @@ export class StickyNotesApp extends LitElement {
             <div class="sticky-loader"></div>
             <h2 class="loading-text">Peeling your notes...</h2>
           </div>
+        ` : this.viewingTrash ? html`
+          ${this.deletedNotes.length === 0 ? html`
+            <div class="empty-state" role="status" aria-live="polite">
+              <div class="empty-card">
+                <span class="empty-icon" style="opacity: 0.5;">delete</span>
+                <p class="empty-title">Trash is empty</p>
+                <p class="empty-sub">No recently deleted notes</p>
+              </div>
+            </div>
+          ` : html`
+            <div class="notes-grid">
+              ${this.deletedNotes.map(note => html`
+                <sticky-note-card
+                  .note=${note}
+                  .isUnlocked=${false}
+                  .isDeleted=${true}
+                ></sticky-note-card>
+              `)}
+            </div>
+          `}
         ` : notes.length === 0 ? html`
           <div class="empty-state" role="status" aria-live="polite">
             <div class="empty-card">

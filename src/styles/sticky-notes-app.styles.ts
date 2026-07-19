@@ -131,23 +131,29 @@ export const stickyNotesAppStyles = css`
       z-index: 9999;
     }
     .toast {
-      background: #1b1b24;
+      background: rgba(27, 27, 36, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
       color: #fff;
-      padding: 12px 24px;
-      border-radius: 8px;
+      padding: 14px 24px;
+      border-radius: 14px;
       display: flex;
       align-items: center;
       gap: 16px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-      animation: slideUp 0.3s ease;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.3), inset 0 1px 2px rgba(255,255,255,0.15);
+      animation: slideUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       font-family: 'Geist', sans-serif;
-      font-size: 14px;
+      font-size: 14.5px;
+      font-weight: 500;
+      border: 1px solid rgba(255,255,255,0.1);
     }
     .toast.error {
-      background: #ba1a1a;
+      background: rgba(186, 26, 26, 0.85);
+      border-color: rgba(255,255,255,0.2);
     }
     .toast.success {
-      background: #22c55e;
+      background: rgba(34, 197, 94, 0.85);
+      border-color: rgba(255,255,255,0.2);
     }
     .toast button {
       background: none;
@@ -322,6 +328,10 @@ export const stickyNotesAppStyles = css`
       margin: 0 0 24px 0;
       text-align: center;
       line-height: 1.4;
+      width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .password-input-wrapper {
       position: relative;
@@ -485,7 +495,8 @@ export const stickyNotesAppStyles = css`
     }
     
     .cat-btn {
-      background: rgba(0,0,0,0.06);
+      text-align: left;
+      background: transparent;
       border: none;
       padding: 6px 12px;
       border-radius: 12px;
@@ -505,6 +516,35 @@ export const stickyNotesAppStyles = css`
     .cat-btn.active {
       background: #3525cd;
       color: #fff;
+    }
+
+    .cat-btn.view-all {
+      color: #3525cd;
+      background: transparent;
+      font-size: 13px;
+      font-weight: 700;
+      padding-top: 8px;
+    }
+    .cat-btn.view-all:hover {
+      background: rgba(53, 37, 205, 0.1);
+    }
+
+    :host([theme="dark"]) .cat-btn {
+      color: rgba(255,255,255,0.7);
+    }
+    :host([theme="dark"]) .cat-btn:hover {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+    }
+    :host([theme="dark"]) .cat-btn.active {
+      background: #3525cd;
+      color: #fff;
+    }
+    :host([theme="dark"]) .cat-btn.view-all {
+      color: #9d8df2;
+    }
+    :host([theme="dark"]) .cat-btn.view-all:hover {
+      background: rgba(157, 141, 242, 0.1);
     }
     .deleted-item {
       display: flex;
@@ -645,6 +685,81 @@ export const stickyNotesAppStyles = css`
       flex-direction: column;
       align-items: flex-end;
       gap: 12px;
+    }
+
+    .category-nav {
+      position: fixed;
+      left: 0; right: 0;
+      top: 86px;
+      z-index: 50;
+      pointer-events: auto;
+      display: flex;
+      gap: 12px;
+      flex-wrap: nowrap;
+      width: 100%;
+      padding: 12px 32px 16px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      box-sizing: border-box;
+      mask-image: linear-gradient(to right, transparent, black 32px, black calc(100% - 32px), transparent);
+      -webkit-mask-image: linear-gradient(to right, transparent, black 32px, black calc(100% - 32px), transparent);
+    }
+    
+    .category-nav::before,
+    .category-nav::after {
+      content: '';
+      margin: auto;
+    }
+    
+    .category-nav::-webkit-scrollbar {
+      display: none;
+    }
+    
+    .cat-pill {
+      background: rgba(255, 255, 255, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05), inset 0 2px 4px rgba(255, 255, 255, 0.5);
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-family: 'Geist', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(0,0,0,0.7);
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      white-space: nowrap;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      flex-shrink: 0;
+    }
+    .cat-pill:hover {
+      background: rgba(255, 255, 255, 0.6);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08), inset 0 2px 4px rgba(255, 255, 255, 0.6);
+      color: #1b1b24;
+    }
+    .cat-pill.active {
+      background: rgba(53, 37, 205, 0.85);
+      border-color: rgba(53, 37, 205, 0.4);
+      box-shadow: 0 8px 20px rgba(53, 37, 205, 0.3), inset 0 2px 4px rgba(255, 255, 255, 0.3);
+      color: #fff;
+    }
+    :host([theme="dark"]) .cat-pill {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), inset 0 2px 8px rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.95);
+      text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    }
+    :host([theme="dark"]) .cat-pill:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.25);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4), inset 0 2px 8px rgba(255, 255, 255, 0.15);
+    }
+    :host([theme="dark"]) .cat-pill.active {
+      background: rgba(139, 92, 246, 0.4);
+      border-color: rgba(139, 92, 246, 0.6);
+      box-shadow: 0 8px 24px rgba(139, 92, 246, 0.3), inset 0 2px 8px rgba(255, 255, 255, 0.2);
     }
 
     /* Floating Add Button */
@@ -794,6 +909,20 @@ export const stickyNotesAppStyles = css`
         justify-content: center;
       }
 
+      .category-nav {
+        position: static;
+        transform: none;
+        justify-content: flex-start;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        padding: 4px 0 12px;
+        -webkit-overflow-scrolling: touch;
+      }
+      
+      .category-nav::-webkit-scrollbar {
+        display: none;
+      }
+
       .board {
         padding: 140px 16px 64px;
       }
@@ -909,6 +1038,8 @@ export const stickyNotesAppStyles = css`
       color: rgba(0,0,0,0.85);
       margin: 0 0 24px 0;
       line-height: 1.2;
+      word-break: break-word;
+      overflow-wrap: break-word;
     }
 
     .view-paper-content {
@@ -952,11 +1083,12 @@ export const stickyNotesAppStyles = css`
       position: absolute;
       top: 4px;
       bottom: 4px;
+      left: 4px;
       width: calc(50% - 4px);
       background: rgba(255,255,255,0.9);
       border-radius: 8px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.1), inset 0 2px 4px rgba(255,255,255,1);
-      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transition: transform 0.5s ease-in-out;
       z-index: -1;
     }
     .mode-slider.left { transform: translateX(0); }
@@ -967,6 +1099,7 @@ export const stickyNotesAppStyles = css`
       box-shadow: none !important;
       border: none;
       padding: 8px 16px;
+      width: 110px;
       border-radius: 8px;
       font-family: 'Geist', sans-serif;
       font-size: 13px;
@@ -975,7 +1108,6 @@ export const stickyNotesAppStyles = css`
       cursor: pointer;
       transition: color 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
       text-align: center;
-      flex: 1;
     }
     .mode-toggle button:hover {
       color: rgba(0,0,0,0.8);
@@ -996,5 +1128,14 @@ export const stickyNotesAppStyles = css`
     }
     .rich-text-content {
       word-wrap: break-word;
+    }
+
+    @media (max-width: 500px) {
+      .view-note-paper {
+        height: auto;
+        min-height: 0;
+        max-height: 90vh;
+        padding: 32px 24px 24px;
+      }
     }
   `;

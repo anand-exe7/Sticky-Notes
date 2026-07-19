@@ -221,6 +221,7 @@ export const stickyNoteFormStyles = css`
       border-bottom: 2px dashed rgba(0,0,0,0.15);
       transition: background 0.2s, border-color 0.2s;
       flex-shrink: 0;
+      width: 100%;
     }
     #note-title:hover, .rich-textarea:hover {
       background: rgba(0,0,0,0.06);
@@ -301,6 +302,8 @@ export const stickyNoteFormStyles = css`
       flex-grow: 1;
       overflow-y: auto;
       transition: background 0.2s, border-color 0.2s;
+      word-break: break-word;
+      overflow-wrap: break-word;
     }
     .rich-textarea:focus {
       background: rgba(0,0,0,0.08);
@@ -334,7 +337,7 @@ export const stickyNoteFormStyles = css`
       background: rgba(255,255,255,0.9);
       border-radius: 8px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.1), inset 0 2px 4px rgba(255,255,255,1);
-      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transition: transform 0.5s ease-in-out;
       z-index: -1;
     }
     .mode-slider.left { transform: translateX(0); }
@@ -361,7 +364,21 @@ export const stickyNoteFormStyles = css`
     .mode-toggle button.active {
       color: #1b1b24;
     }
-    
+
+    @media (min-width: 768px) {
+      .mode-toggle {
+        padding: 6px;
+      }
+      .mode-slider {
+        top: 6px;
+        bottom: 6px;
+        width: calc(50% - 6px);
+      }
+      .mode-toggle button {
+        padding: 10px 32px;
+        font-size: 15px;
+      }
+    }
     .checklist-wrapper {
       display: flex;
       flex-direction: column;
@@ -504,9 +521,87 @@ export const stickyNoteFormStyles = css`
     .lock-section {
       display: flex;
       flex-wrap: wrap;
-      align-items: center;
+      align-items: stretch;
       gap: 8px;
+      flex: 1 1 300px;
+      justify-content: flex-end;
     }
+    
+    .lock-actions-container {
+      display: flex;
+      width: 100%;
+      justify-content: space-between;
+      align-items: stretch;
+      gap: 8px;
+      flex-wrap: nowrap;
+    }
+    .lock-actions-inner {
+      display: flex;
+      flex-direction: row;
+      gap: 8px;
+      flex: 1;
+      min-width: 0;
+      align-items: stretch;
+    }
+    
+    @media (max-width: 480px) {
+      .lock-actions-container {
+        flex-direction: column;
+      }
+      .lock-actions-inner {
+        flex-direction: column;
+      }
+      .password-input {
+        width: 100% !important;
+      }
+    }
+
+    .lock-action-btn {
+      font-family: 'Geist', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      height: 42px;
+      padding: 0 16px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      white-space: nowrap;
+      transition: all 0.2s;
+      box-sizing: border-box;
+    }
+    
+    .lock-action-btn.primary {
+      background: #3525cd;
+      color: #fff;
+    }
+    .lock-action-btn.primary:hover { background: #2b1eb0; }
+    
+    .lock-action-btn.secondary {
+      background: rgba(0,0,0,0.05);
+      color: #1b1b24;
+    }
+    .lock-action-btn.secondary:hover { background: rgba(0,0,0,0.1); }
+    
+    .lock-action-btn.danger {
+      background: rgba(186,26,26,0.1);
+      color: #ba1a1a;
+    }
+    .lock-action-btn.danger:hover { background: rgba(186,26,26,0.2); }
+    
+    :host([theme="dark"]) .lock-action-btn.secondary {
+      background: rgba(255,255,255,0.1);
+      color: #e4e4e7;
+    }
+    :host([theme="dark"]) .lock-action-btn.secondary:hover { background: rgba(255,255,255,0.15); }
+    :host([theme="dark"]) .lock-action-btn.danger {
+      background: rgba(255,84,73,0.15);
+      color: #ff5449;
+    }
+    :host([theme="dark"]) .lock-action-btn.danger:hover { background: rgba(255,84,73,0.25); }
 
     .lock-toggle {
       background: rgba(255, 255, 255, 0.4);
@@ -546,7 +641,8 @@ export const stickyNoteFormStyles = css`
     .password-input {
       background: rgba(255, 255, 255, 0.6);
       border: 1px solid rgba(255,255,255,0.8);
-      padding: 10px 40px 10px 16px;
+      height: 42px;
+      padding: 0 40px 0 16px;
       border-radius: 12px;
       font-family: 'Geist', sans-serif;
       font-size: 14px;
@@ -662,11 +758,16 @@ export const stickyNoteFormStyles = css`
 
     @media (max-width: 500px) {
       .modal {
-        height: 95vh;
-        max-height: 850px;
+        height: 75vh;
+        min-height: 75vh;
+        max-height: 75vh;
         padding: 16px 12px 12px;
         max-width: 95%;
         border-radius: 4px 4px 16px 4px;
+      }
+      .rich-textarea-wrapper, .checklist-wrapper {
+        min-height: 0;
+        flex-grow: 1;
       }
       .modal-header {
         margin-bottom: 8px;
@@ -674,14 +775,21 @@ export const stickyNoteFormStyles = css`
       }
       .category-input {
         max-width: none;
-        margin-right: 0;
+        margin-right: 8px;
         font-size: 12px;
         padding: 6px 12px;
+        min-width: 0;
       }
       .mode-toggle {
         width: 100%;
         padding: 2px;
         margin-bottom: 8px;
+      }
+      .mode-slider {
+        top: 2px;
+        left: 2px;
+        width: calc(50% - 2px);
+        height: calc(100% - 4px);
       }
       .mode-toggle button {
         padding: 6px 4px;
@@ -691,7 +799,7 @@ export const stickyNoteFormStyles = css`
         flex-wrap: wrap;
         padding: 2px 4px;
         gap: 2px;
-        margin-bottom: 4px;
+        margin-bottom: 12px;
       }
       .toolbar button {
         padding: 4px;
@@ -700,14 +808,15 @@ export const stickyNoteFormStyles = css`
         font-size: 18px;
       }
       .emoji-picker {
-        left: auto;
-        right: 0;
+        left: 0;
+        right: auto;
+        transform: none;
         top: calc(100% + 4px);
       }
       #note-title {
-        font-size: 18px;
-        padding: 4px 8px;
-        margin-bottom: 4px;
+        font-size: 16px;
+        padding: 8px 12px;
+        margin-bottom: 12px;
       }
       .rich-textarea {
         font-size: 14px;
@@ -732,6 +841,7 @@ export const stickyNoteFormStyles = css`
         height: 28px;
       }
       .lock-section {
+        flex: none;
         flex-direction: column;
         align-items: stretch;
         gap: 8px;
